@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: message_store
+    ports:
+      - 10001:5432
+    volumes:
+      - db_volume:/docker-entrypoint-initdb.d
+    restart: always
+    healthcheck:
+      test: pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1
+      start_period: 5s
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  pubsub-emulator:
+    build:
+      context: ./pubsub
+      dockerfile: Dockerfile
+    environment:
+      - PUBSUB_PROJECT_ID=my-project
+      - PUBSUB_TOPIC_ID=my-topic
+      - PUBSUB_SUBSCRIPTION_ID=my-subscription
+      - PUBSUB_EMULATOR_HOST=0.0.0.0
+      - PUBSUB_EMULATOR_PORT=10002
+    restart: always
+    command: 
+      ./pubsub/entrypoint.sh
+    ports:
+      - 10002:10002
+
+volumes:
+  db_volume:
