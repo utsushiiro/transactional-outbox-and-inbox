@@ -1,5 +1,5 @@
 services:
-  db:
+  postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: postgres
@@ -8,7 +8,10 @@ services:
     ports:
       - 10001:5432
     volumes:
-      - db_volume:/docker-entrypoint-initdb.d
+      # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
+      - postgres_data_volume:/var/lib/postgresql/data
+      # https://github.com/docker-library/docs/blob/master/postgres/README.md#initialization-scripts
+      - ./postgres/initdb.d:/docker-entrypoint-initdb.d
     restart: always
     healthcheck:
       test: pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1
@@ -36,4 +39,4 @@ services:
       - 10002:10002
 
 volumes:
-  db_volume:
+  postgres_data_volume:
