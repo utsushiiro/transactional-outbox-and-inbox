@@ -18,6 +18,8 @@ services:
       retries: 3
 
   pubsub-emulator:
+    platform: linux/amd64
+    init: true
     build:
       context: ./pubsub
       dockerfile: Dockerfile
