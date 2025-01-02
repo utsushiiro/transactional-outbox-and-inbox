@@ -1,10 +1,14 @@
 #!/bin/bash
 
+# enable job control
+set -m
+
 gcloud beta emulators pubsub start \
   --project=$PUBSUB_PROJECT_ID \
-  --host-port=${PUBSUB_EMULATOR_HOST}:${PUBSUB_EMULATOR_PORT} --quiet &
+  --host-port=${PUBSUB_EMULATOR_HOST} --quiet &
 
-while ! nc -z localhost ${PUBSUB_EMULATOR_PORT}; do
+PUBSUB_EMULATOR_PORT=${PUBSUB_EMULATOR_HOST#*:}
+while ! nc -z localhost $PUBSUB_EMULATOR_PORT; do
   sleep 0.1
 done
 
