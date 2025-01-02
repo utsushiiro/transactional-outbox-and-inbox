@@ -10,6 +10,7 @@ done
 
 . venv/bin/activate
 
+# https://cloud.google.com/pubsub/docs/emulator?hl=ja#using_the_emulator
 python3 publisher.py $PUBSUB_PROJECT_ID create $PUBSUB_TOPIC_ID
 python3 subscriber.py $PUBSUB_PROJECT_ID create $PUBSUB_TOPIC_ID $PUBSUB_SUBSCRIPTION_ID
 
