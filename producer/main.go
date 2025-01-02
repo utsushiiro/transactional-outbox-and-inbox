@@ -2,39 +2,25 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
-	"cloud.google.com/go/pubsub"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/producer/pkg/msgclient"
 )
 
 func main() {
+	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:10002")
-	err := publish("my-project", "my-topic", "Hello World")
+
+	client, err := msgclient.NewPublisher(mainCtx, "my-project", "my-topic")
+	if err != nil {
+		log.Fatalf("failed to publisher.New: %v", err)
+	}
+
+	msgID, err := client.Publish(mainCtx, "Hello, World!")
 	if err != nil {
 		log.Fatalf("publish: %v", err)
 	}
-}
 
-func publish(projectID, topicID, msg string) error {
-	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("pubsub: NewClient: %w", err)
-	}
-	defer client.Close()
-
-	t := client.Topic(topicID)
-	result := t.Publish(ctx, &pubsub.Message{
-		Data: []byte(msg),
-	})
-
-	id, err := result.Get(ctx)
-	if err != nil {
-		return fmt.Errorf("pubsub: result.Get: %w", err)
-	}
-
-	log.Printf("Published a message; msg ID: %v\n", id)
-	return nil
+	log.Printf("Published a message; msg ID: %v\n", msgID)
 }
