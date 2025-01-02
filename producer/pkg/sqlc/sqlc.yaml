@@ -1,0 +1,13 @@
+# https://docs.sqlc.dev/en/stable/reference/config.html
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "query.sql"
+    schema: "../../../middlewares/postgres/initdb.d/schema.sql"
+    gen:
+      go:
+        package: "sqlc"
+        out: "./"
+        sql_package: "database/sql"
+        emit_prepared_queries: false
+        emit_interface: true
