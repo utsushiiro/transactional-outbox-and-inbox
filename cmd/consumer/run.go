@@ -12,7 +12,7 @@ import (
 
 func run() {
 	mainCtx := context.Background()
-	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:10002")
+	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:5002")
 
 	client, err := msgclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
 	if err != nil {

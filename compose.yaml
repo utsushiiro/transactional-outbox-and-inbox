@@ -4,9 +4,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: message_store
+      POSTGRES_DB: transactional_outbox_and_inbox_example
     ports:
-      - 10001:5432
+      - 5001:5432
     volumes:
       # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
       - postgres_data_volume:/var/lib/postgresql/data
@@ -30,10 +30,10 @@ services:
       - PUBSUB_PROJECT_ID=my-project
       - PUBSUB_TOPIC_ID=my-topic
       - PUBSUB_SUBSCRIPTION_ID=my-subscription
-      - PUBSUB_EMULATOR_HOST=0.0.0.0:10002
+      - PUBSUB_EMULATOR_HOST=0.0.0.0:5002
     restart: always
     ports:
-      - 10002:10002
+      - 5002:5002
 
 volumes:
   postgres_data_volume:

@@ -22,5 +22,5 @@ RUN python3 -m venv venv
 RUN venv/bin/pip install -r requirements.txt
 
 COPY ./entrypoint.sh ./
-EXPOSE 10002
+EXPOSE 5002
 ENTRYPOINT ["./entrypoint.sh"]

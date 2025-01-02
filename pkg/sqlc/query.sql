@@ -1,3 +1,4 @@
--- name: GetMessageByID :one
-SELECT * FROM message_outbox
-WHERE id = $1 LIMIT 1;
+-- name: InsertOutboxMessage :one
+INSERT INTO outbox_messages (message_topic, message_payload)
+VALUES ($1, $2)
+RETURNING *;
