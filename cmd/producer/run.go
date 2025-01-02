@@ -1,14 +1,14 @@
-package main
+package producer
 
 import (
 	"context"
 	"log"
 	"os"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/producer/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 )
 
-func main() {
+func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:10002")
 

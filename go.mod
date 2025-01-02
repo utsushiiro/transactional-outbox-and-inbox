@@ -1,8 +1,8 @@
-module github.com/utsushiiro/transactional-outbox-and-inbox/consumer
+module github.com/utsushiiro/transactional-outbox-and-inbox/app
 
 go 1.23.3
 
-require cloud.google.com/go/pubsub v1.45.3
+require github.com/spf13/cobra v1.8.1
 
 require (
 	cloud.google.com/go v0.116.0 // indirect
@@ -37,4 +37,10 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
+)
+
+require (
+	cloud.google.com/go/pubsub v1.45.3
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 )

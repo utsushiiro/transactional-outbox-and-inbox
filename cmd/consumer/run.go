@@ -1,4 +1,4 @@
-package main
+package consumer
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/consumer/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 )
 
-func main() {
+func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:10002")
 

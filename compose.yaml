@@ -11,7 +11,7 @@ services:
       # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
       - postgres_data_volume:/var/lib/postgresql/data
       # https://github.com/docker-library/docs/blob/master/postgres/README.md#initialization-scripts
-      - ./postgres/initdb.d:/docker-entrypoint-initdb.d
+      - ./middlewares/postgres/initdb.d:/docker-entrypoint-initdb.d
     restart: always
     healthcheck:
       test: pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1
@@ -24,7 +24,7 @@ services:
     platform: linux/amd64
     init: true
     build:
-      context: ./pubsub
+      context: ./middlewares/pubsub
       dockerfile: Dockerfile
     environment:
       - PUBSUB_PROJECT_ID=my-project
@@ -32,8 +32,6 @@ services:
       - PUBSUB_SUBSCRIPTION_ID=my-subscription
       - PUBSUB_EMULATOR_HOST=0.0.0.0:10002
     restart: always
-    command: 
-      ./pubsub/entrypoint.sh
     ports:
       - 10002:10002
 
