@@ -41,4 +41,6 @@ func run() {
 	produceWorker.Stop()
 	time.Sleep(outboxWorkerInterval + 1*time.Second)
 	outboxWorker.Stop()
+
+	log.Println("producer stopped")
 }

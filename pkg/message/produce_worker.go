@@ -38,7 +38,7 @@ func (p *ProduceWorker) Run(ctx context.Context) {
 func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))
 	if err != nil {
-		log.Fatalf("failed to marshal: %v", err)
+		return err
 	}
 	message := sqlc.InsertOutboxMessageParams{
 		MessageTopic:   "my-topic",
