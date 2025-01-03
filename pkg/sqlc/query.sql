@@ -21,3 +21,17 @@ RETURNING *;
 INSERT INTO inbox_messages (message_uuid, message_payload, received_at)
 VALUES ($1, $2, NOW())
 RETURNING *;
+
+-- name: SelectUnprocessedInboxMessage :one
+SELECT *
+FROM inbox_messages
+WHERE processed_at IS NULL
+ORDER BY received_at ASC
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+
+-- name: UpdateInboxMessageAsProcessed :one
+UPDATE inbox_messages
+SET processed_at = NOW()
+WHERE message_uuid = $1
+RETURNING *;

@@ -62,6 +62,29 @@ func (q *Queries) InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessa
 	return i, err
 }
 
+const selectUnprocessedInboxMessage = `-- name: SelectUnprocessedInboxMessage :one
+SELECT message_uuid, message_payload, received_at, processed_at, created_at, updated_at
+FROM inbox_messages
+WHERE processed_at IS NULL
+ORDER BY received_at ASC
+LIMIT 1
+FOR UPDATE SKIP LOCKED
+`
+
+func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessage, error) {
+	row := q.db.QueryRowContext(ctx, selectUnprocessedInboxMessage)
+	var i InboxMessage
+	err := row.Scan(
+		&i.MessageUuid,
+		&i.MessagePayload,
+		&i.ReceivedAt,
+		&i.ProcessedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const selectUnsentOutboxMessages = `-- name: SelectUnsentOutboxMessages :many
 SELECT message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
 FROM outbox_messages
@@ -99,6 +122,27 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateInboxMessageAsProcessed = `-- name: UpdateInboxMessageAsProcessed :one
+UPDATE inbox_messages
+SET processed_at = NOW()
+WHERE message_uuid = $1
+RETURNING message_uuid, message_payload, received_at, processed_at, created_at, updated_at
+`
+
+func (q *Queries) UpdateInboxMessageAsProcessed(ctx context.Context, messageUuid uuid.UUID) (InboxMessage, error) {
+	row := q.db.QueryRowContext(ctx, updateInboxMessageAsProcessed, messageUuid)
+	var i InboxMessage
+	err := row.Scan(
+		&i.MessageUuid,
+		&i.MessagePayload,
+		&i.ReceivedAt,
+		&i.ProcessedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateOutboxMessageAsSent = `-- name: UpdateOutboxMessageAsSent :one

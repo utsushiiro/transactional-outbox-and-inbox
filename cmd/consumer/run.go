@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
@@ -29,9 +30,15 @@ func run() {
 	inboxWorker := message.NewInboxWorker(dbManager, client)
 	go inboxWorker.Run(mainCtx)
 
+	consumeWorker := message.NewConsumeWorker(dbManager)
+	go consumeWorker.Run(mainCtx, 100*time.Millisecond)
+
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	<-ctx.Done()
+
+	inboxWorker.Stop()
+	consumeWorker.Stop()
 
 	log.Println("consumer stopped")
 }
