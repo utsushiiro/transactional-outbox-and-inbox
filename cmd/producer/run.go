@@ -44,7 +44,7 @@ func run() {
 	<-ctx.Done()
 
 	ticker.Stop()
-	<-time.After(workerInterval + 1*time.Second)
+	time.Sleep(workerInterval + 1*time.Second)
 	worker.Stop()
 }
 
