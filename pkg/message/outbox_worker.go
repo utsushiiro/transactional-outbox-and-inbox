@@ -12,20 +12,20 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/timeutils"
 )
 
-type PublishWorker struct {
+type OutboxWorker struct {
 	dbManager *rdb.SingleDBManager
 	publisher msgclient.Publisher
 	ticker    *timeutils.Ticker
 }
 
-func NewPublishWorker(dbManager *rdb.SingleDBManager, publisher msgclient.Publisher) *PublishWorker {
-	return &PublishWorker{
+func NewOutboxWorker(dbManager *rdb.SingleDBManager, publisher msgclient.Publisher) *OutboxWorker {
+	return &OutboxWorker{
 		dbManager: dbManager,
 		publisher: publisher,
 	}
 }
 
-func (p *PublishWorker) Run(ctx context.Context, interval time.Duration) {
+func (p *OutboxWorker) Run(ctx context.Context, interval time.Duration) {
 	ticker := timeutils.NewTicker(interval)
 	p.ticker = ticker
 
@@ -34,7 +34,7 @@ func (p *PublishWorker) Run(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func (p *PublishWorker) publishUnsentMessagesInOutbox(ctx context.Context) {
+func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) {
 	_ = p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
 
@@ -65,7 +65,7 @@ func (p *PublishWorker) publishUnsentMessagesInOutbox(ctx context.Context) {
 	})
 }
 
-func (p *PublishWorker) Stop() {
+func (p *OutboxWorker) Stop() {
 	if p.ticker != nil {
 		p.ticker.Stop()
 	}

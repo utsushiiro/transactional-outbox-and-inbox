@@ -27,9 +27,9 @@ func run() {
 		log.Fatalf("failed to publisher.New: %v", err)
 	}
 
-	publishWorker := message.NewPublishWorker(dbManager, client)
-	publishWorkerInterval := 1 * time.Second
-	go publishWorker.Run(mainCtx, publishWorkerInterval)
+	outboxWorker := message.NewOutboxWorker(dbManager, client)
+	outboxWorkerInterval := 1 * time.Second
+	go outboxWorker.Run(mainCtx, outboxWorkerInterval)
 
 	produceWorker := message.NewProduceWorker(dbManager)
 	go produceWorker.Run(mainCtx)
@@ -39,6 +39,6 @@ func run() {
 	<-ctx.Done()
 
 	produceWorker.Stop()
-	time.Sleep(publishWorkerInterval + 1*time.Second)
-	publishWorker.Stop()
+	time.Sleep(outboxWorkerInterval + 1*time.Second)
+	outboxWorker.Stop()
 }
