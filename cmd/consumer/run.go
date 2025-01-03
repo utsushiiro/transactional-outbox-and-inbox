@@ -4,27 +4,34 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 )
 
 func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:5002")
 
+	dbManager, err := rdb.NewSingleDBManager("postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
+	if err != nil {
+		log.Fatalf("failed to rdb.NewSingleDBManager: %v", err)
+	}
+
 	client, err := msgclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
 	if err != nil {
 		log.Fatalf("failed to msgclient.NewSubscriber: %v", err)
 	}
 
-	receiverCtx, cancel := context.WithTimeout(mainCtx, 10*time.Second)
+	inboxWorker := message.NewInboxWorker(dbManager, client)
+	go inboxWorker.Run(mainCtx)
+
+	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	<-ctx.Done()
 
-	client.Receive(receiverCtx, func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
-		log.Printf("Got message: id=%s payload=%s\n", msg.ID, string(msg.Payload))
-		msgResponder.Ack()
-	})
-
-	log.Println("Consumer stopped")
+	log.Println("consumer stopped")
 }

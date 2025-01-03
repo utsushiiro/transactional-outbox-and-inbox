@@ -12,6 +12,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type InboxMessage struct {
+	MessageUuid    uuid.UUID
+	MessagePayload json.RawMessage
+	ReceivedAt     sql.NullTime
+	ProcessedAt    sql.NullTime
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type OutboxMessage struct {
 	MessageUuid    uuid.UUID
 	MessageTopic   string

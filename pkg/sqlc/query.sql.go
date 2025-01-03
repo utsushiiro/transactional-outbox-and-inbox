@@ -12,6 +12,31 @@ import (
 	"github.com/google/uuid"
 )
 
+const insertInboxMessage = `-- name: InsertInboxMessage :one
+INSERT INTO inbox_messages (message_uuid, message_payload, received_at)
+VALUES ($1, $2, NOW())
+RETURNING message_uuid, message_payload, received_at, processed_at, created_at, updated_at
+`
+
+type InsertInboxMessageParams struct {
+	MessageUuid    uuid.UUID
+	MessagePayload json.RawMessage
+}
+
+func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error) {
+	row := q.db.QueryRowContext(ctx, insertInboxMessage, arg.MessageUuid, arg.MessagePayload)
+	var i InboxMessage
+	err := row.Scan(
+		&i.MessageUuid,
+		&i.MessagePayload,
+		&i.ReceivedAt,
+		&i.ProcessedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const insertOutboxMessage = `-- name: InsertOutboxMessage :one
 INSERT INTO outbox_messages (message_topic, message_payload)
 VALUES ($1, $2)

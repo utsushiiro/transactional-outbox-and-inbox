@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error)
 	InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) (OutboxMessage, error)
 	SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error)
 	UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error)

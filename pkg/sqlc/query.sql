@@ -16,3 +16,8 @@ UPDATE outbox_messages
 SET sent_at = NOW()
 WHERE message_uuid = $1
 RETURNING *;
+
+-- name: InsertInboxMessage :one
+INSERT INTO inbox_messages (message_uuid, message_payload, received_at)
+VALUES ($1, $2, NOW())
+RETURNING *;
