@@ -15,7 +15,7 @@ import (
 type InboxMessage struct {
 	MessageUuid    uuid.UUID
 	MessagePayload json.RawMessage
-	ReceivedAt     sql.NullTime
+	ReceivedAt     time.Time
 	ProcessedAt    sql.NullTime
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
