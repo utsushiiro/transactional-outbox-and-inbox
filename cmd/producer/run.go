@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"math/rand"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
@@ -30,19 +33,25 @@ func run() {
 	}
 
 	worker := outbox.NewWorker(dbManager, client)
-	go worker.Run(mainCtx, 1*time.Second)
+	workerInterval := 1 * time.Second
+	go worker.Run(mainCtx, workerInterval)
 
-	ticker := timeutils.NewTicker(150 * time.Millisecond)
+	ticker := timeutils.NewTicker(100 * time.Millisecond)
 	go insertMessagesToOutbox(mainCtx, dbManager, ticker)
 
-	<-time.After(5 * time.Second)
+	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	<-ctx.Done()
+
 	ticker.Stop()
-	<-time.After(2 * time.Second)
+	<-time.After(workerInterval + 1*time.Second)
 	worker.Stop()
 }
 
 func insertMessagesToOutbox(ctx context.Context, dbManager *rdb.SingleDBManager, ticker *timeutils.Ticker) {
 	for range ticker.C() {
+		time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+
 		data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))
 		if err != nil {
 			log.Fatalf("failed to marshal: %v", err)
