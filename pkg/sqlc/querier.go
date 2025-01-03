@@ -6,10 +6,14 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) (OutboxMessage, error)
+	SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error)
+	UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error)
 }
 
 var _ Querier = (*Queries)(nil)

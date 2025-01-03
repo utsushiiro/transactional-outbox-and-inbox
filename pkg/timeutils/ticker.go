@@ -1,17 +1,17 @@
-package outbox
+package timeutils
 
 import (
 	"time"
 )
 
-type ticker struct {
+type Ticker struct {
 	base *time.Ticker
 	stop chan struct{}
 	c    chan time.Time
 }
 
-func NewTicker(d time.Duration) *ticker {
-	t := &ticker{
+func NewTicker(d time.Duration) *Ticker {
+	t := &Ticker{
 		base: time.NewTicker(d),
 		stop: make(chan struct{}),
 		c:    make(chan time.Time),
@@ -32,11 +32,11 @@ func NewTicker(d time.Duration) *ticker {
 	return t
 }
 
-func (t *ticker) C() <-chan time.Time {
+func (t *Ticker) C() <-chan time.Time {
 	return t.c
 }
 
-func (t *ticker) Stop() {
+func (t *Ticker) Stop() {
 	t.base.Stop()
 	close(t.stop)
 }

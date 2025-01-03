@@ -8,7 +8,7 @@ import (
 )
 
 type Publisher interface {
-	Publish(ctx context.Context, msg string) (string, error)
+	Publish(ctx context.Context, data []byte) (string, error)
 	Close() error
 }
 
@@ -29,9 +29,9 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (Publishe
 	}, nil
 }
 
-func (p *publisher) Publish(ctx context.Context, msg string) (string, error) {
+func (p *publisher) Publish(ctx context.Context, data []byte) (string, error) {
 	result := p.topic.Publish(ctx, &pubsub.Message{
-		Data: []byte(msg),
+		Data: []byte(data),
 	})
 
 	msgID, err := result.Get(ctx)

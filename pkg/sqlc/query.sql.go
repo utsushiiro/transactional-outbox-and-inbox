@@ -8,6 +8,8 @@ package sqlc
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 const insertOutboxMessage = `-- name: InsertOutboxMessage :one
@@ -23,6 +25,66 @@ type InsertOutboxMessageParams struct {
 
 func (q *Queries) InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) (OutboxMessage, error) {
 	row := q.db.QueryRowContext(ctx, insertOutboxMessage, arg.MessageTopic, arg.MessagePayload)
+	var i OutboxMessage
+	err := row.Scan(
+		&i.MessageUuid,
+		&i.MessageTopic,
+		&i.MessagePayload,
+		&i.SentAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const selectUnsentOutboxMessages = `-- name: SelectUnsentOutboxMessages :many
+SELECT message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
+FROM outbox_messages
+WHERE sent_at IS NULL
+ORDER BY created_at ASC
+LIMIT $1
+FOR UPDATE SKIP LOCKED
+`
+
+func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error) {
+	rows, err := q.db.QueryContext(ctx, selectUnsentOutboxMessages, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OutboxMessage
+	for rows.Next() {
+		var i OutboxMessage
+		if err := rows.Scan(
+			&i.MessageUuid,
+			&i.MessageTopic,
+			&i.MessagePayload,
+			&i.SentAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateOutboxMessageAsSent = `-- name: UpdateOutboxMessageAsSent :one
+UPDATE outbox_messages
+SET sent_at = NOW()
+WHERE message_uuid = $1
+RETURNING message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
+`
+
+func (q *Queries) UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error) {
+	row := q.db.QueryRowContext(ctx, updateOutboxMessageAsSent, messageUuid)
 	var i OutboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
