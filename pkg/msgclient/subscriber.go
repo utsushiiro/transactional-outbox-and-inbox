@@ -8,7 +8,7 @@ import (
 )
 
 type Subscriber interface {
-	Receive(ctx context.Context, handler func(context.Context, *pubsub.Message)) error
+	Receive(ctx context.Context, handler func(context.Context, *Message, MessageResponder)) error
 	Close() error
 }
 
@@ -33,8 +33,14 @@ func NewSubscriber(
 	}, nil
 }
 
-func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *pubsub.Message)) error {
-	err := s.subscription.Receive(ctx, handler)
+func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *Message, MessageResponder)) error {
+	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
+		msg := &Message{
+			ID:      pubsubMsg.Attributes["MessageID"],
+			Payload: pubsubMsg.Data,
+		}
+		handler(ctx, msg, pubsubMsg)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to subscription.Receive: %w", err)
 	}

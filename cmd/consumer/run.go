@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 )
 
@@ -22,9 +21,9 @@ func run() {
 	receiverCtx, cancel := context.WithTimeout(mainCtx, 10*time.Second)
 	defer cancel()
 
-	client.Receive(receiverCtx, func(ctx context.Context, msg *pubsub.Message) {
-		log.Printf("Got message: %q\n", string(msg.Data))
-		msg.Ack()
+	client.Receive(receiverCtx, func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
+		log.Printf("Got message: id=%s payload=%s\n", msg.ID, string(msg.Payload))
+		msgResponder.Ack()
 	})
 
 	log.Println("Consumer stopped")

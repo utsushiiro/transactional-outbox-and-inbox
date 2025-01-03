@@ -8,7 +8,7 @@ import (
 )
 
 type Publisher interface {
-	Publish(ctx context.Context, data []byte) (string, error)
+	Publish(ctx context.Context, msg Message) (string, error)
 	Close() error
 }
 
@@ -29,17 +29,20 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (Publishe
 	}, nil
 }
 
-func (p *publisher) Publish(ctx context.Context, data []byte) (string, error) {
+func (p *publisher) Publish(ctx context.Context, msg Message) (string, error) {
 	result := p.topic.Publish(ctx, &pubsub.Message{
-		Data: []byte(data),
+		Attributes: map[string]string{
+			"MessageID": msg.ID,
+		},
+		Data: msg.Payload,
 	})
 
-	msgID, err := result.Get(ctx)
+	pubsubMsgID, err := result.Get(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to result.Get: %w", err)
 	}
 
-	return msgID, nil
+	return pubsubMsgID, nil
 }
 
 func (p *publisher) Close() error {
