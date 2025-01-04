@@ -44,5 +44,8 @@ func run() {
 	inboxWorker.Stop()
 	consumeWorker.Stop()
 
+	gracefulPeriod := max(inboxWorkerTimeoutPerProcess, consumeWorkerTimeoutPerProcess) + 1*time.Second
+	time.Sleep(gracefulPeriod)
+
 	log.Println("consumer stopped")
 }

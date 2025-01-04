@@ -44,5 +44,8 @@ func run() {
 	produceWorker.Stop()
 	outboxWorker.Stop()
 
+	gracefulPeriod := max(outboxWorkerTimeoutPerProcess, produceWorkerTimeoutPerProcess) + 1*time.Second
+	time.Sleep(gracefulPeriod)
+
 	log.Println("producer stopped")
 }
