@@ -14,15 +14,21 @@ import (
 )
 
 type ConsumeWorker struct {
-	dbManager       *rdb.SingleDBManager
-	pollingInterval time.Duration
-	ticker          *timeutils.Ticker
+	dbManager         *rdb.SingleDBManager
+	pollingInterval   time.Duration
+	timeoutPerProcess time.Duration
+	ticker            *timeutils.Ticker
 }
 
-func NewConsumeWorker(dbManager *rdb.SingleDBManager, pollingInterval time.Duration) *ConsumeWorker {
+func NewConsumeWorker(
+	dbManager *rdb.SingleDBManager,
+	pollingInterval time.Duration,
+	timeoutPerProcess time.Duration,
+) *ConsumeWorker {
 	return &ConsumeWorker{
-		dbManager:       dbManager,
-		pollingInterval: pollingInterval,
+		dbManager:         dbManager,
+		pollingInterval:   pollingInterval,
+		timeoutPerProcess: timeoutPerProcess,
 	}
 }
 
@@ -42,6 +48,9 @@ func (c *ConsumeWorker) Run() error {
 }
 
 func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, c.timeoutPerProcess)
+	defer cancel()
+
 	err := c.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
 

@@ -28,11 +28,13 @@ func run() {
 		log.Fatalf("failed to publisher.New: %v", err)
 	}
 
-	outboxWorkerInterval := 1 * time.Second
-	outboxWorker := message.NewOutboxWorker(dbManager, client, outboxWorkerInterval)
+	outboxWorkerPoolingInterval := 1 * time.Second
+	outboxWorkerTimeoutPerProcess := 1 * time.Second
+	outboxWorker := message.NewOutboxWorker(dbManager, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
 	recovery.Go(outboxWorker.Run)
 
-	produceWorker := message.NewProduceWorker(dbManager)
+	produceWorkerTimeoutPerProcess := 1 * time.Second
+	produceWorker := message.NewProduceWorker(dbManager, produceWorkerTimeoutPerProcess)
 	recovery.Go(produceWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
@@ -40,7 +42,6 @@ func run() {
 	<-ctx.Done()
 
 	produceWorker.Stop()
-	time.Sleep(outboxWorkerInterval + 1*time.Second)
 	outboxWorker.Stop()
 
 	log.Println("producer stopped")

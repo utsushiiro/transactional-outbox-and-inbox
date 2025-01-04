@@ -13,21 +13,24 @@ import (
 )
 
 type OutboxWorker struct {
-	dbManager       *rdb.SingleDBManager
-	publisher       msgclient.Publisher
-	pollingInterval time.Duration
-	ticker          *timeutils.Ticker
+	dbManager         *rdb.SingleDBManager
+	publisher         msgclient.Publisher
+	pollingInterval   time.Duration
+	timeoutPerProcess time.Duration
+	ticker            *timeutils.Ticker
 }
 
 func NewOutboxWorker(
 	dbManager *rdb.SingleDBManager,
 	publisher msgclient.Publisher,
 	poolingInterval time.Duration,
+	timeoutPerProcess time.Duration,
 ) *OutboxWorker {
 	return &OutboxWorker{
-		dbManager:       dbManager,
-		publisher:       publisher,
-		pollingInterval: poolingInterval,
+		dbManager:         dbManager,
+		publisher:         publisher,
+		pollingInterval:   poolingInterval,
+		timeoutPerProcess: timeoutPerProcess,
 	}
 }
 
@@ -47,6 +50,9 @@ func (p *OutboxWorker) Run() error {
 }
 
 func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
+	defer cancel()
+
 	var count int
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)

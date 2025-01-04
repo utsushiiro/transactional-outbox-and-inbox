@@ -14,12 +14,16 @@ import (
 )
 
 type ProduceWorker struct {
-	dbManager *rdb.SingleDBManager
-	ticker    *timeutils.Ticker
+	dbManager         *rdb.SingleDBManager
+	timeoutPerProcess time.Duration
+	ticker            *timeutils.Ticker
 }
 
-func NewProduceWorker(dbManager *rdb.SingleDBManager) *ProduceWorker {
-	return &ProduceWorker{dbManager: dbManager}
+func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Duration) *ProduceWorker {
+	return &ProduceWorker{
+		dbManager:         dbManager,
+		timeoutPerProcess: timeoutPerProcess,
+	}
 }
 
 func (p *ProduceWorker) Run() error {
@@ -39,6 +43,9 @@ func (p *ProduceWorker) Run() error {
 }
 
 func (p *ProduceWorker) produceMessage(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
+	defer cancel()
+
 	data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err

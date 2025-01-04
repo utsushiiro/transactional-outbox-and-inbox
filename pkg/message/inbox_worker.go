@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
@@ -12,19 +13,28 @@ import (
 )
 
 type InboxWorker struct {
-	dbManager  *rdb.SingleDBManager
-	subscriber msgclient.Subscriber
+	dbManager         *rdb.SingleDBManager
+	subscriber        msgclient.Subscriber
+	timeoutPerProcess time.Duration
 }
 
-func NewInboxWorker(dbManager *rdb.SingleDBManager, subscriber msgclient.Subscriber) *InboxWorker {
+func NewInboxWorker(
+	dbManager *rdb.SingleDBManager,
+	subscriber msgclient.Subscriber,
+	timeoutPerProcess time.Duration,
+) *InboxWorker {
 	return &InboxWorker{
-		dbManager:  dbManager,
-		subscriber: subscriber,
+		dbManager:         dbManager,
+		subscriber:        subscriber,
+		timeoutPerProcess: timeoutPerProcess,
 	}
 }
 
 func (i *InboxWorker) Run() error {
 	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
+		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
+		defer cancel()
+
 		err := i.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 			querier := sqlc.NewQuerier(tx)
 

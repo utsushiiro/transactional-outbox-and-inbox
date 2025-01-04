@@ -28,11 +28,13 @@ func run() {
 		log.Fatalf("failed to msgclient.NewSubscriber: %v", err)
 	}
 
-	inboxWorker := message.NewInboxWorker(dbManager, client)
+	inboxWorkerTimeoutPerProcess := 1 * time.Second
+	inboxWorker := message.NewInboxWorker(dbManager, client, inboxWorkerTimeoutPerProcess)
 	recovery.Go(inboxWorker.Run)
 
 	consumeInterval := 100 * time.Millisecond
-	consumeWorker := message.NewConsumeWorker(dbManager, consumeInterval)
+	consumeWorkerTimeoutPerProcess := 1 * time.Second
+	consumeWorker := message.NewConsumeWorker(dbManager, consumeInterval, consumeWorkerTimeoutPerProcess)
 	recovery.Go(consumeWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
