@@ -11,6 +11,7 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/recovery"
 )
 
 func run() {
@@ -27,12 +28,12 @@ func run() {
 		log.Fatalf("failed to publisher.New: %v", err)
 	}
 
-	outboxWorker := message.NewOutboxWorker(dbManager, client)
 	outboxWorkerInterval := 1 * time.Second
-	go outboxWorker.Run(mainCtx, outboxWorkerInterval)
+	outboxWorker := message.NewOutboxWorker(dbManager, client, outboxWorkerInterval)
+	recovery.Go(outboxWorker.Run)
 
 	produceWorker := message.NewProduceWorker(dbManager)
-	go produceWorker.Run(mainCtx)
+	recovery.Go(produceWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()

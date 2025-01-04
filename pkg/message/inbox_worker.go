@@ -23,8 +23,8 @@ func NewInboxWorker(dbManager *rdb.SingleDBManager, subscriber msgclient.Subscri
 	}
 }
 
-func (i *InboxWorker) Run(ctx context.Context) {
-	i.subscriber.Receive(ctx, func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
+func (i *InboxWorker) Run() error {
+	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
 		err := i.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 			querier := sqlc.NewQuerier(tx)
 
@@ -51,6 +51,8 @@ func (i *InboxWorker) Run(ctx context.Context) {
 
 		msgResponder.Ack()
 	})
+
+	return err
 }
 
 func (i *InboxWorker) Stop() {

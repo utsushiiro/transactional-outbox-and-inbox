@@ -22,7 +22,8 @@ func NewProduceWorker(dbManager *rdb.SingleDBManager) *ProduceWorker {
 	return &ProduceWorker{dbManager: dbManager}
 }
 
-func (p *ProduceWorker) Run(ctx context.Context) {
+func (p *ProduceWorker) Run() error {
+	ctx := context.Background()
 	ticker := timeutils.NewTicker(100 * time.Millisecond)
 	p.ticker = ticker
 
@@ -33,6 +34,8 @@ func (p *ProduceWorker) Run(ctx context.Context) {
 		}
 		time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	}
+
+	return nil
 }
 
 func (p *ProduceWorker) produceMessage(ctx context.Context) error {

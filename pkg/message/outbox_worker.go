@@ -13,20 +13,27 @@ import (
 )
 
 type OutboxWorker struct {
-	dbManager *rdb.SingleDBManager
-	publisher msgclient.Publisher
-	ticker    *timeutils.Ticker
+	dbManager       *rdb.SingleDBManager
+	publisher       msgclient.Publisher
+	pollingInterval time.Duration
+	ticker          *timeutils.Ticker
 }
 
-func NewOutboxWorker(dbManager *rdb.SingleDBManager, publisher msgclient.Publisher) *OutboxWorker {
+func NewOutboxWorker(
+	dbManager *rdb.SingleDBManager,
+	publisher msgclient.Publisher,
+	poolingInterval time.Duration,
+) *OutboxWorker {
 	return &OutboxWorker{
-		dbManager: dbManager,
-		publisher: publisher,
+		dbManager:       dbManager,
+		publisher:       publisher,
+		pollingInterval: poolingInterval,
 	}
 }
 
-func (p *OutboxWorker) Run(ctx context.Context, interval time.Duration) {
-	ticker := timeutils.NewTicker(interval)
+func (p *OutboxWorker) Run() error {
+	ctx := context.Background()
+	ticker := timeutils.NewTicker(p.pollingInterval)
 	p.ticker = ticker
 
 	for range ticker.C() {
@@ -35,6 +42,8 @@ func (p *OutboxWorker) Run(ctx context.Context, interval time.Duration) {
 			log.Printf("failed to publish unsent messages: %v", err)
 		}
 	}
+
+	return nil
 }
 
 func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error {

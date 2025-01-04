@@ -11,6 +11,7 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/recovery"
 )
 
 func run() {
@@ -28,10 +29,11 @@ func run() {
 	}
 
 	inboxWorker := message.NewInboxWorker(dbManager, client)
-	go inboxWorker.Run(mainCtx)
+	recovery.Go(inboxWorker.Run)
 
-	consumeWorker := message.NewConsumeWorker(dbManager)
-	go consumeWorker.Run(mainCtx, 100*time.Millisecond)
+	consumeInterval := 100 * time.Millisecond
+	consumeWorker := message.NewConsumeWorker(dbManager, consumeInterval)
+	recovery.Go(consumeWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()

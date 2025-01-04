@@ -14,16 +14,21 @@ import (
 )
 
 type ConsumeWorker struct {
-	dbManager *rdb.SingleDBManager
-	ticker    *timeutils.Ticker
+	dbManager       *rdb.SingleDBManager
+	pollingInterval time.Duration
+	ticker          *timeutils.Ticker
 }
 
-func NewConsumeWorker(dbManager *rdb.SingleDBManager) *ConsumeWorker {
-	return &ConsumeWorker{dbManager: dbManager}
+func NewConsumeWorker(dbManager *rdb.SingleDBManager, pollingInterval time.Duration) *ConsumeWorker {
+	return &ConsumeWorker{
+		dbManager:       dbManager,
+		pollingInterval: pollingInterval,
+	}
 }
 
-func (c *ConsumeWorker) Run(ctx context.Context, interval time.Duration) {
-	ticker := timeutils.NewTicker(interval)
+func (c *ConsumeWorker) Run() error {
+	ctx := context.Background()
+	ticker := timeutils.NewTicker(c.pollingInterval)
 	c.ticker = ticker
 
 	for range ticker.C() {
@@ -32,6 +37,8 @@ func (c *ConsumeWorker) Run(ctx context.Context, interval time.Duration) {
 			log.Printf("failed to consumeMessage: %v", err)
 		}
 	}
+
+	return nil
 }
 
 func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
