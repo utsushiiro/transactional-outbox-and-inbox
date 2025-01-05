@@ -1,17 +1,18 @@
 services:
   postgres:
-    image: postgres:16
+    build:
+      context: ./middlewares/postgres
+      dockerfile: Dockerfile
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: transactional_outbox_and_inbox_example
     ports:
       - 5001:5432
-    volumes:
-      # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
+    volumes: # https://github.com/docker-library/docs/blob/master/postgres/README.md
       - postgres_data_volume:/var/lib/postgresql/data
-      # https://github.com/docker-library/docs/blob/master/postgres/README.md#initialization-scripts
       - ./middlewares/postgres/initdb.d:/docker-entrypoint-initdb.d
+      - ./middlewares/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
     restart: always
     healthcheck:
       test: pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1
