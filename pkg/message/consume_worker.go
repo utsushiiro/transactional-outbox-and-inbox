@@ -18,6 +18,7 @@ type ConsumeWorker struct {
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
+	sleeper           *timeutils.RandomSleeper
 }
 
 func NewConsumeWorker(
@@ -29,6 +30,7 @@ func NewConsumeWorker(
 		dbManager:         dbManager,
 		pollingInterval:   pollingInterval,
 		timeoutPerProcess: timeoutPerProcess,
+		sleeper:           timeutils.NewRandomSleeper(100*time.Millisecond, 500*time.Millisecond),
 	}
 }
 
@@ -69,6 +71,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		c.sleeper.Sleep() // simulate task processing time
 		log.Printf("processed message: %v", msg)
 
 		_, err = querier.UpdateInboxMessageAsProcessed(ctx, unprocessedMessage.MessageUuid)
