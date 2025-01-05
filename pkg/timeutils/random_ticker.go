@@ -7,7 +7,6 @@ import (
 )
 
 type RandomTicker struct {
-	base    *time.Ticker
 	stop    chan struct{}
 	c       chan time.Time
 	randSrc *rand.Rand
@@ -53,6 +52,5 @@ func (t *RandomTicker) C() <-chan time.Time {
 }
 
 func (t *RandomTicker) Stop() {
-	t.base.Stop()
 	close(t.stop)
 }
