@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
-	"math/rand"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
@@ -16,7 +15,7 @@ import (
 type ProduceWorker struct {
 	dbManager         *rdb.SingleDBManager
 	timeoutPerProcess time.Duration
-	ticker            *timeutils.Ticker
+	ticker            *timeutils.RandomTicker
 }
 
 func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Duration) *ProduceWorker {
@@ -28,7 +27,10 @@ func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Dur
 
 func (p *ProduceWorker) Run() error {
 	ctx := context.Background()
-	ticker := timeutils.NewTicker(100 * time.Millisecond)
+	ticker, err := timeutils.NewRandomTicker(100*time.Millisecond, 500*time.Millisecond)
+	if err != nil {
+		return err
+	}
 	p.ticker = ticker
 
 	for range ticker.C() {
@@ -36,7 +38,6 @@ func (p *ProduceWorker) Run() error {
 		if err != nil {
 			log.Printf("failed to produceMessage: %v", err)
 		}
-		time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 	}
 
 	return nil
