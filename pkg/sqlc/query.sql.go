@@ -38,22 +38,16 @@ func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessage
 }
 
 const insertOutboxMessage = `-- name: InsertOutboxMessage :one
-INSERT INTO outbox_messages (message_topic, message_payload)
-VALUES ($1, $2)
-RETURNING message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
+INSERT INTO outbox_messages (message_payload)
+VALUES ($1)
+RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
 `
 
-type InsertOutboxMessageParams struct {
-	MessageTopic   string
-	MessagePayload json.RawMessage
-}
-
-func (q *Queries) InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) (OutboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, insertOutboxMessage, arg.MessageTopic, arg.MessagePayload)
+func (q *Queries) InsertOutboxMessage(ctx context.Context, messagePayload json.RawMessage) (OutboxMessage, error) {
+	row := q.db.QueryRowContext(ctx, insertOutboxMessage, messagePayload)
 	var i OutboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
-		&i.MessageTopic,
 		&i.MessagePayload,
 		&i.SentAt,
 		&i.CreatedAt,
@@ -86,7 +80,7 @@ func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessa
 }
 
 const selectUnsentOutboxMessages = `-- name: SelectUnsentOutboxMessages :many
-SELECT message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
+SELECT message_uuid, message_payload, sent_at, created_at, updated_at
 FROM outbox_messages
 WHERE sent_at IS NULL
 ORDER BY created_at ASC
@@ -105,7 +99,6 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 		var i OutboxMessage
 		if err := rows.Scan(
 			&i.MessageUuid,
-			&i.MessageTopic,
 			&i.MessagePayload,
 			&i.SentAt,
 			&i.CreatedAt,
@@ -149,7 +142,7 @@ const updateOutboxMessageAsSent = `-- name: UpdateOutboxMessageAsSent :one
 UPDATE outbox_messages
 SET sent_at = NOW()
 WHERE message_uuid = $1
-RETURNING message_uuid, message_topic, message_payload, sent_at, created_at, updated_at
+RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
 `
 
 func (q *Queries) UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error) {
@@ -157,7 +150,6 @@ func (q *Queries) UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uui
 	var i OutboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
-		&i.MessageTopic,
 		&i.MessagePayload,
 		&i.SentAt,
 		&i.CreatedAt,

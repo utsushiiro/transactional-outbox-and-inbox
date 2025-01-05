@@ -23,7 +23,6 @@ type InboxMessage struct {
 
 type OutboxMessage struct {
 	MessageUuid    uuid.UUID
-	MessageTopic   string
 	MessagePayload json.RawMessage
 	SentAt         sql.NullTime
 	CreatedAt      time.Time
