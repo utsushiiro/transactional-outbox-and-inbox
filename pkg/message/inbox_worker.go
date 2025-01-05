@@ -7,20 +7,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
 )
 
 type InboxWorker struct {
 	dbManager         *rdb.SingleDBManager
-	subscriber        msgclient.Subscriber
+	subscriber        Subscriber
 	timeoutPerProcess time.Duration
 }
 
 func NewInboxWorker(
 	dbManager *rdb.SingleDBManager,
-	subscriber msgclient.Subscriber,
+	subscriber Subscriber,
 	timeoutPerProcess time.Duration,
 ) *InboxWorker {
 	return &InboxWorker{
@@ -31,7 +30,7 @@ func NewInboxWorker(
 }
 
 func (i *InboxWorker) Run() error {
-	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *msgclient.Message, msgResponder msgclient.MessageResponder) {
+	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *Message, msgResponder MessageResponder) {
 		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
 		defer cancel()
 

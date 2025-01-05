@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/timeutils"
@@ -14,7 +13,7 @@ import (
 
 type OutboxWorker struct {
 	dbManager         *rdb.SingleDBManager
-	publisher         msgclient.Publisher
+	publisher         Publisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
@@ -22,7 +21,7 @@ type OutboxWorker struct {
 
 func NewOutboxWorker(
 	dbManager *rdb.SingleDBManager,
-	publisher msgclient.Publisher,
+	publisher Publisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *OutboxWorker {
@@ -63,7 +62,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		}
 
 		for _, unsentMessage := range unsentMessages {
-			_, err := p.publisher.Publish(ctx, msgclient.Message{
+			_, err := p.publisher.Publish(ctx, Message{
 				ID:      unsentMessage.MessageUuid.String(),
 				Payload: []byte(unsentMessage.MessagePayload),
 			})

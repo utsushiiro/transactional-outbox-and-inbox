@@ -5,19 +5,17 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 )
-
-type Publisher interface {
-	Publish(ctx context.Context, msg Message) (string, error)
-	Close() error
-}
 
 type publisher struct {
 	client *pubsub.Client
 	topic  *pubsub.Topic
 }
 
-func NewPublisher(ctx context.Context, projectID string, topic string) (Publisher, error) {
+var _ message.Publisher = (*publisher)(nil)
+
+func NewPublisher(ctx context.Context, projectID string, topic string) (*publisher, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pubsub.NewClient: %w", err)
@@ -29,7 +27,7 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (Publishe
 	}, nil
 }
 
-func (p *publisher) Publish(ctx context.Context, msg Message) (string, error) {
+func (p *publisher) Publish(ctx context.Context, msg message.Message) (string, error) {
 	result := p.topic.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
 			"MessageID": msg.ID,

@@ -5,17 +5,15 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 )
-
-type Subscriber interface {
-	Receive(ctx context.Context, handler func(context.Context, *Message, MessageResponder)) error
-	Close() error
-}
 
 type subscriber struct {
 	client       *pubsub.Client
 	subscription *pubsub.Subscription
 }
+
+var _ message.Subscriber = (*subscriber)(nil)
 
 func NewSubscriber(
 	ctx context.Context,
@@ -33,9 +31,9 @@ func NewSubscriber(
 	}, nil
 }
 
-func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *Message, MessageResponder)) error {
+func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *message.Message, message.MessageResponder)) error {
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
-		msg := &Message{
+		msg := &message.Message{
 			ID:      pubsubMsg.Attributes["MessageID"],
 			Payload: pubsubMsg.Data,
 		}
