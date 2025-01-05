@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS outbox_messages (
 );
 
 CREATE INDEX IF NOT EXISTS outbox_messages_unsent_created_at ON outbox_messages (created_at) WHERE sent_at IS NULL;
+CREATE INDEX IF NOT EXISTS outbox_messages_sent_created_at ON outbox_messages (created_at) WHERE sent_at IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS inbox_messages (
     message_uuid UUID PRIMARY KEY,
@@ -19,3 +20,4 @@ CREATE TABLE IF NOT EXISTS inbox_messages (
 );
 
 CREATE INDEX IF NOT EXISTS inbox_messages_unprocessed_created_at ON inbox_messages (created_at) WHERE processed_at IS NULL;
+CREATE INDEX IF NOT EXISTS inbox_messages_processed_created_at ON inbox_messages (created_at) WHERE processed_at IS NOT NULL;
