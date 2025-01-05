@@ -48,6 +48,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
 	defer cancel()
 
+	// In a real-world scenario, this data would be related to the task
 	data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
@@ -60,7 +61,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	err = p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
 
-		// do some tasks here in the same transaction with inserting outbox message
+		// perform some tasks here in the same transaction with inserting outbox message
 
 		if _, err := querier.InsertOutboxMessage(ctx, message); err != nil {
 			return err
