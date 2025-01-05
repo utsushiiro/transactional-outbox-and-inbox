@@ -58,6 +58,9 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 
 	err = p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
+
+		// do some tasks here in the same transaction with inserting outbox message
+
 		if _, err := querier.InsertOutboxMessage(ctx, message); err != nil {
 			return err
 		}

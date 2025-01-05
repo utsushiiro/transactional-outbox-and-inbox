@@ -63,7 +63,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 			return err
 		}
 
-		// process message
+		// do some tasks in the same transaction with updating inbox message as processed
 		var msg string
 		err = json.Unmarshal(unprocessedMessage.MessagePayload, &msg)
 		if err != nil {
