@@ -25,13 +25,23 @@ func run() {
 
 	client, err := msgclient.NewPublisher(mainCtx, "my-project", "my-topic")
 	if err != nil {
-		log.Fatalf("failed to publisher.New: %v", err)
+		log.Fatalf("failed to msgclient.NewPublisher: %v", err)
+	}
+
+	batchClient, err := msgclient.NewPooledBatchPublisher(mainCtx, "my-project", "my-topic", 5)
+	if err != nil {
+		log.Fatalf("failed to msgclient.NewPooledBatchPublisher: %v", err)
 	}
 
 	outboxWorkerPoolingInterval := 1 * time.Second
 	outboxWorkerTimeoutPerProcess := 1 * time.Second
 	outboxWorker := message.NewOutboxWorker(dbManager, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
 	recovery.Go(outboxWorker.Run)
+
+	batchOutboxWorkerPoolingInterval := 1 * time.Second
+	batchOutboxWorkerTimeoutPerProcess := 1 * time.Second
+	batchOutboxWorker := message.NewBatchOutboxWorker(dbManager, batchClient, batchOutboxWorkerPoolingInterval, batchOutboxWorkerTimeoutPerProcess, 5)
+	recovery.Go(batchOutboxWorker.Run)
 
 	produceWorkerTimeoutPerProcess := 1 * time.Second
 	produceWorker := message.NewProduceWorker(dbManager, produceWorkerTimeoutPerProcess)
@@ -43,6 +53,7 @@ func run() {
 
 	produceWorker.Stop()
 	outboxWorker.Stop()
+	batchOutboxWorker.Stop()
 
 	gracefulPeriod := max(outboxWorkerTimeoutPerProcess, produceWorkerTimeoutPerProcess) + 1*time.Second
 	time.Sleep(gracefulPeriod)

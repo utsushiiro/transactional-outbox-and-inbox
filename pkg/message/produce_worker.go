@@ -28,7 +28,7 @@ func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Dur
 func (p *ProduceWorker) Run() error {
 	ctx := context.Background()
 	// Use a random ticker to simulate intervals between task occurrences.
-	ticker, err := timeutils.NewRandomTicker(100*time.Millisecond, 500*time.Millisecond)
+	ticker, err := timeutils.NewRandomTicker(50*time.Millisecond, 200*time.Millisecond)
 	if err != nil {
 		return err
 	}

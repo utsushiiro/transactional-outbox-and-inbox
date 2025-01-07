@@ -24,16 +24,6 @@ type Publisher interface {
 	Close() error
 }
 
-type BatchPublisher interface {
-	BatchPublish(ctx context.Context, msgs []*Message) (*BatchResult, error)
-	Close() error
-}
-
-type BatchResult struct {
-	SucceededIDs []string
-	FailedIDs    []string
-}
-
 func NewOutboxWorker(
 	dbManager *rdb.SingleDBManager,
 	publisher Publisher,
@@ -71,7 +61,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
 
-		unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, 10)
+		unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, 5)
 		if err != nil {
 			return err
 		}

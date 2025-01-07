@@ -30,7 +30,7 @@ func NewConsumeWorker(
 		dbManager:         dbManager,
 		pollingInterval:   pollingInterval,
 		timeoutPerProcess: timeoutPerProcess,
-		sleeper:           timeutils.NewRandomSleeper(100*time.Millisecond, 500*time.Millisecond),
+		sleeper:           timeutils.NewRandomSleeper(50*time.Millisecond, 200*time.Millisecond),
 	}
 }
 
