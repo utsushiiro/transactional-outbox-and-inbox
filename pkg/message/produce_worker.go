@@ -27,7 +27,7 @@ func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Dur
 
 func (p *ProduceWorker) Run() error {
 	ctx := context.Background()
-	// use a random ticker to simulate intervals between task occurrences
+	// Use a random ticker to simulate intervals between task occurrences.
 	ticker, err := timeutils.NewRandomTicker(100*time.Millisecond, 500*time.Millisecond)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		querier := sqlc.NewQuerier(tx)
 
-		// perform some tasks here in the same transaction with inserting outbox message
+		// Perform some tasks here in the same transaction with inserting outbox message.
 
 		// In a real-world scenario, this data would be related to the task.
 		data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))

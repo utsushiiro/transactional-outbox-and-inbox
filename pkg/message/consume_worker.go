@@ -65,13 +65,13 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 			return err
 		}
 
-		// perform some tasks in the same transaction with updating inbox message as processed
+		// Perform some tasks in the same transaction with updating inbox message as processed.
 		var msg string
 		err = json.Unmarshal(unprocessedMessage.MessagePayload, &msg)
 		if err != nil {
 			return err
 		}
-		c.sleeper.Sleep() // simulate task processing time
+		c.sleeper.Sleep() // Simulate task processing time.
 		log.Printf("processed message: %v", msg)
 
 		_, err = querier.UpdateInboxMessageAsProcessed(ctx, unprocessedMessage.MessageUuid)
