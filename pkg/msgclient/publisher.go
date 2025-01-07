@@ -27,7 +27,7 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (*publish
 	}, nil
 }
 
-func (p *publisher) Publish(ctx context.Context, message message.Message) error {
+func (p *publisher) Publish(ctx context.Context, message *message.Message) error {
 	result := p.topic.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
 			"MessageID": message.ID,

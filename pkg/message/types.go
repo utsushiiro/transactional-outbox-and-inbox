@@ -13,7 +13,7 @@ type MessageResponder interface {
 }
 
 type Publisher interface {
-	Publish(ctx context.Context, msg Message) error
+	Publish(ctx context.Context, msg *Message) error
 	Close() error
 }
 
