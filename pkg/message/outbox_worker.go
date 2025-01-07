@@ -19,6 +19,21 @@ type OutboxWorker struct {
 	ticker            *timeutils.Ticker
 }
 
+type Publisher interface {
+	Publish(ctx context.Context, msg *Message) error
+	Close() error
+}
+
+type BatchPublisher interface {
+	BatchPublish(ctx context.Context, msgs []*Message) (*BatchResult, error)
+	Close() error
+}
+
+type BatchResult struct {
+	SucceededIDs []string
+	FailedIDs    []string
+}
+
 func NewOutboxWorker(
 	dbManager *rdb.SingleDBManager,
 	publisher Publisher,

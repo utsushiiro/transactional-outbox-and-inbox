@@ -17,6 +17,16 @@ type InboxWorker struct {
 	timeoutPerProcess time.Duration
 }
 
+type Subscriber interface {
+	Receive(ctx context.Context, handler func(context.Context, *Message, MessageResponder)) error
+	Close() error
+}
+
+type MessageResponder interface {
+	Ack()
+	Nack()
+}
+
 func NewInboxWorker(
 	dbManager *rdb.SingleDBManager,
 	subscriber Subscriber,
