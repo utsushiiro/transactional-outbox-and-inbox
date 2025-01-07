@@ -31,11 +31,10 @@ func NewSimpleBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []message.Message) ([]string, error) {
-	// The `results` and `resultErrs` slices are shared across multiple goroutines,
+func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*message.Message) (*message.BatchResult, error) {
+	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
-	results := make([]string, len(messages))
-	resultErrs := make([]error, len(messages))
+	errs := make([]error, len(messages))
 
 	wg := sync.WaitGroup{}
 	limits := make(chan struct{}, p.workerLimitSize)
@@ -58,30 +57,38 @@ func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []mess
 			}()
 
 			result := p.topic.Publish(ctx, pubsubMsg)
+
 			_, err := result.Get(ctx)
 			if err != nil {
-				resultErrs[i] = fmt.Errorf("failed to publish message %s: %w", msg.ID, err)
-			} else {
-				results[i] = pubsubMsg.ID
+				errs[i] = fmt.Errorf("failed to publish message %s: %w", msg.ID, err)
 			}
 		}()
 	}
 
 	wg.Wait()
 
-	var publishedIDs []string
-	for _, result := range results {
-		if result != "" {
-			publishedIDs = append(publishedIDs, result)
+	var (
+		succeededIDs []string
+		failedIDs    []string
+	)
+	for i, err := range errs {
+		if err != nil {
+			failedIDs = append(failedIDs, messages[i].ID)
+		} else {
+			succeededIDs = append(succeededIDs, messages[i].ID)
 		}
 	}
-
-	joinedErrors := errors.Join(resultErrs...)
-	if joinedErrors != nil {
-		return publishedIDs, joinedErrors
+	batchResult := &message.BatchResult{
+		SucceededIDs: succeededIDs,
+		FailedIDs:    failedIDs,
 	}
 
-	return publishedIDs, nil
+	joinedErrors := errors.Join(errs...)
+	if joinedErrors != nil {
+		return batchResult, joinedErrors
+	}
+
+	return batchResult, nil
 }
 
 func (p *simpleBatchPublisher) Close() error {

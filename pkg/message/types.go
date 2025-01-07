@@ -18,8 +18,13 @@ type Publisher interface {
 }
 
 type BatchPublisher interface {
-	BatchPublish(ctx context.Context, msgs []Message) ([]string, error)
+	BatchPublish(ctx context.Context, msgs []*Message) (*BatchResult, error)
 	Close() error
+}
+
+type BatchResult struct {
+	SucceededIDs []string
+	FailedIDs    []string
 }
 
 type Subscriber interface {
