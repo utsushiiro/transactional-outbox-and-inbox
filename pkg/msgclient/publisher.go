@@ -27,20 +27,20 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (*publish
 	}, nil
 }
 
-func (p *publisher) Publish(ctx context.Context, msg message.Message) (string, error) {
+func (p *publisher) Publish(ctx context.Context, message message.Message) error {
 	result := p.topic.Publish(ctx, &pubsub.Message{
 		Attributes: map[string]string{
-			"MessageID": msg.ID,
+			"MessageID": message.ID,
 		},
-		Data: msg.Payload,
+		Data: message.Payload,
 	})
 
-	pubsubMsgID, err := result.Get(ctx)
+	_, err := result.Get(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to result.Get: %w", err)
+		return fmt.Errorf("failed to result.Get: %w", err)
 	}
 
-	return pubsubMsgID, nil
+	return nil
 }
 
 func (p *publisher) Close() error {
