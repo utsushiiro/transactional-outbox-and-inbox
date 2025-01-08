@@ -27,8 +27,8 @@ type BatchPublisher interface {
 }
 
 type BatchResult struct {
-	SucceededIDs []string
-	FailedIDs    []string
+	SucceededIDs []uuid.UUID
+	FailedIDs    []uuid.UUID
 }
 
 func NewBatchOutboxWorker(
@@ -112,7 +112,7 @@ func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit
 	msgs := make(Messages, 0, len(unsentMessages))
 	for _, unsentMessage := range unsentMessages {
 		msgs = append(msgs, &Message{
-			ID:      unsentMessage.MessageUuid.String(),
+			ID:      unsentMessage.MessageUuid,
 			Payload: []byte(unsentMessage.MessagePayload),
 		})
 	}
@@ -123,12 +123,7 @@ func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit
 // TODO: use bulk update
 func UpdateOutboxMessagesAsSent(ctx context.Context, querier sqlc.Querier, publishedMessages Messages) error {
 	for _, publishedMessage := range publishedMessages {
-		parsed, err := uuid.Parse(publishedMessage.ID)
-		if err != nil {
-			return err
-		}
-
-		_, err = querier.UpdateOutboxMessageAsSent(ctx, parsed)
+		_, err := querier.UpdateOutboxMessageAsSent(ctx, publishedMessage.ID)
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
 )
@@ -47,13 +46,8 @@ func (i *InboxWorker) Run() error {
 		err := i.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
 			querier := sqlc.NewQuerier(tx)
 
-			parsedMsgID, err := uuid.Parse(msg.ID)
-			if err != nil {
-				return err
-			}
-
-			_, err = querier.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
-				MessageUuid:    parsedMsgID,
+			_, err := querier.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
+				MessageUuid:    msg.ID,
 				MessagePayload: msg.Payload,
 			})
 			if err != nil {

@@ -1,14 +1,16 @@
 package message
 
+import "github.com/google/uuid"
+
 type Message struct {
-	ID      string
+	ID      uuid.UUID
 	Payload []byte
 }
 
 type Messages []*Message
 
-func (ms Messages) Filter(excludeIDs []string) Messages {
-	var excludeIDMap = make(map[string]struct{}, len(excludeIDs))
+func (ms Messages) Filter(excludeIDs []uuid.UUID) Messages {
+	var excludeIDMap = make(map[uuid.UUID]struct{}, len(excludeIDs))
 	for _, id := range excludeIDs {
 		excludeIDMap[id] = struct{}{}
 	}

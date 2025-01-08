@@ -68,7 +68,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 
 		for _, unsentMessage := range unsentMessages {
 			err := p.publisher.Publish(ctx, &Message{
-				ID:      unsentMessage.MessageUuid.String(),
+				ID:      unsentMessage.MessageUuid,
 				Payload: []byte(unsentMessage.MessagePayload),
 			})
 			if err != nil {

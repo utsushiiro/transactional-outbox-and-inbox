@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
 )
 
@@ -42,7 +43,7 @@ func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*mes
 	for i, msg := range messages {
 		pubsubMsg := &pubsub.Message{
 			Attributes: map[string]string{
-				"MessageID": msg.ID,
+				"MessageID": msg.ID.String(),
 			},
 			Data: msg.Payload,
 		}
@@ -68,8 +69,8 @@ func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*mes
 	wg.Wait()
 
 	var (
-		succeededIDs []string
-		failedIDs    []string
+		succeededIDs []uuid.UUID
+		failedIDs    []uuid.UUID
 	)
 	for i, err := range errs {
 		if err != nil {
