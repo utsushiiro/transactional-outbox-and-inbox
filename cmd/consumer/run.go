@@ -18,7 +18,7 @@ func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:5002")
 
-	dbManager, err := rdb.NewSingleDBManager("postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
+	dbManager, err := rdb.NewDeprecatedSingleDBManager("postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
 	if err != nil {
 		log.Fatalf("failed to rdb.NewSingleDBManager: %v", err)
 	}

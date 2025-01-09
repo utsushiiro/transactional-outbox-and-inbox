@@ -13,7 +13,7 @@ import (
 )
 
 type BatchOutboxWorker struct {
-	dbManager         *rdb.SingleDBManager
+	dbManager         *rdb.DeprecatedSingleDBManager
 	publisher         BatchPublisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
@@ -32,7 +32,7 @@ type BatchResult struct {
 }
 
 func NewBatchOutboxWorker(
-	dbManager *rdb.SingleDBManager,
+	dbManager *rdb.DeprecatedSingleDBManager,
 	publisher BatchPublisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
@@ -68,7 +68,7 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 
 	var publishedCount int
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewQuerier(tx)
+		querier := sqlc.NewDeprecatedQuerier(tx)
 
 		unsentMessages, err := SelectUnsentOutboxMessages(ctx, querier, int32(p.batchSize))
 		if err != nil {

@@ -13,12 +13,12 @@ import (
 )
 
 type ProduceWorker struct {
-	dbManager         *rdb.SingleDBManager
+	dbManager         *rdb.DeprecatedSingleDBManager
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.RandomTicker
 }
 
-func NewProduceWorker(dbManager *rdb.SingleDBManager, timeoutPerProcess time.Duration) *ProduceWorker {
+func NewProduceWorker(dbManager *rdb.DeprecatedSingleDBManager, timeoutPerProcess time.Duration) *ProduceWorker {
 	return &ProduceWorker{
 		dbManager:         dbManager,
 		timeoutPerProcess: timeoutPerProcess,
@@ -49,7 +49,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	defer cancel()
 
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewQuerier(tx)
+		querier := sqlc.NewDeprecatedQuerier(tx)
 
 		// Perform some tasks here in the same transaction with inserting outbox message.
 

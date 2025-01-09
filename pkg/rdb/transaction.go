@@ -9,7 +9,7 @@ import (
 
 var ErrTxAlreadyStarted = errors.New("transaction already started in passed context")
 
-func runInTx(
+func deprecatedRunInTx(
 	ctx context.Context,
 	ctxKeyForTx any,
 	db *sql.DB,

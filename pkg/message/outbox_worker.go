@@ -12,7 +12,7 @@ import (
 )
 
 type OutboxWorker struct {
-	dbManager         *rdb.SingleDBManager
+	dbManager         *rdb.DeprecatedSingleDBManager
 	publisher         Publisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
@@ -25,7 +25,7 @@ type Publisher interface {
 }
 
 func NewOutboxWorker(
-	dbManager *rdb.SingleDBManager,
+	dbManager *rdb.DeprecatedSingleDBManager,
 	publisher Publisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
@@ -59,7 +59,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 
 	var count int
 	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewQuerier(tx)
+		querier := sqlc.NewDeprecatedQuerier(tx)
 
 		unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, 5)
 		if err != nil {

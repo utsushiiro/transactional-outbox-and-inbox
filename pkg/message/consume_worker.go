@@ -14,7 +14,7 @@ import (
 )
 
 type ConsumeWorker struct {
-	dbManager         *rdb.SingleDBManager
+	dbManager         *rdb.DeprecatedSingleDBManager
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
@@ -22,7 +22,7 @@ type ConsumeWorker struct {
 }
 
 func NewConsumeWorker(
-	dbManager *rdb.SingleDBManager,
+	dbManager *rdb.DeprecatedSingleDBManager,
 	pollingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *ConsumeWorker {
@@ -54,7 +54,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 	defer cancel()
 
 	err := c.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewQuerier(tx)
+		querier := sqlc.NewDeprecatedQuerier(tx)
 
 		unprocessedMessage, err := querier.SelectUnprocessedInboxMessage(ctx)
 		if err != nil {

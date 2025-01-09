@@ -11,7 +11,7 @@ import (
 )
 
 type InboxWorker struct {
-	dbManager         *rdb.SingleDBManager
+	dbManager         *rdb.DeprecatedSingleDBManager
 	subscriber        Subscriber
 	timeoutPerProcess time.Duration
 }
@@ -27,7 +27,7 @@ type MessageResponder interface {
 }
 
 func NewInboxWorker(
-	dbManager *rdb.SingleDBManager,
+	dbManager *rdb.DeprecatedSingleDBManager,
 	subscriber Subscriber,
 	timeoutPerProcess time.Duration,
 ) *InboxWorker {
@@ -44,7 +44,7 @@ func (i *InboxWorker) Run() error {
 		defer cancel()
 
 		err := i.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-			querier := sqlc.NewQuerier(tx)
+			querier := sqlc.NewDeprecatedQuerier(tx)
 
 			_, err := querier.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
 				MessageUuid:    msg.ID,
