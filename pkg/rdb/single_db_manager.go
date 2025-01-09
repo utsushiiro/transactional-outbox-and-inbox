@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -42,4 +44,43 @@ func (s *DeprecatedSingleDBManager) RunInTx(
 
 func (s *DeprecatedSingleDBManager) Close() error {
 	return s.db.Close()
+}
+
+var singleDBManagerTxCtxKey struct{}
+
+type SingleDBManager struct {
+	pool *pgxpool.Pool
+}
+
+func NewSingleDBManager(
+	ctx context.Context,
+	userName string,
+	password string,
+	host string,
+	databaseName string,
+) (*SingleDBManager, error) {
+	// e.g. "postgres://username:password@localhost:5432/database_name"
+	uri := "postgres://" + userName + ":" + password + "@" + host + "/" + databaseName + "?sslmode=disable"
+	config, err := pgxpool.ParseConfig(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SingleDBManager{pool: pool}, nil
+}
+
+func (s *SingleDBManager) RunInTx(
+	ctx context.Context,
+	fn func(context.Context, pgx.Tx) error,
+) error {
+	return runInTx(ctx, singleDBManagerTxCtxKey, s.pool, fn)
+}
+
+func (s *SingleDBManager) Close() {
+	s.pool.Close()
 }
