@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
 )
 
 type simpleBatchPublisher struct {
@@ -32,7 +33,7 @@ func NewSimpleBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*message.Message) (*message.BatchResult, error) {
+func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*message.BatchResult, error) {
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))

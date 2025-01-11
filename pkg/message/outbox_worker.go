@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/timeutils"
@@ -20,7 +21,7 @@ type OutboxWorker struct {
 }
 
 type Publisher interface {
-	Publish(ctx context.Context, msg *Message) error
+	Publish(ctx context.Context, msg *model.Message) error
 	Close() error
 }
 
@@ -67,7 +68,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		}
 
 		for _, unsentMessage := range unsentMessages {
-			err := p.publisher.Publish(ctx, &Message{
+			err := p.publisher.Publish(ctx, &model.Message{
 				ID:      unsentMessage.MessageUuid,
 				Payload: []byte(unsentMessage.MessagePayload),
 			})

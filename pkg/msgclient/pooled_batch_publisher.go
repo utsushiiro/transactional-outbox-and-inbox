@@ -10,6 +10,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
 )
 
 type pooledBatchPublisher struct {
@@ -33,7 +34,7 @@ func NewPooledBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*message.Message) (*message.BatchResult, error) {
+func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*message.BatchResult, error) {
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/timeutils"
@@ -22,7 +23,7 @@ type BatchOutboxWorker struct {
 }
 
 type BatchPublisher interface {
-	BatchPublish(ctx context.Context, msgs []*Message) (*BatchResult, error)
+	BatchPublish(ctx context.Context, msgs []*model.Message) (*BatchResult, error)
 	Close() error
 }
 
@@ -103,15 +104,15 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 	return nil
 }
 
-func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit int32) (Messages, error) {
+func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit int32) (model.Messages, error) {
 	unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	msgs := make(Messages, 0, len(unsentMessages))
+	msgs := make(model.Messages, 0, len(unsentMessages))
 	for _, unsentMessage := range unsentMessages {
-		msgs = append(msgs, &Message{
+		msgs = append(msgs, &model.Message{
 			ID:      unsentMessage.MessageUuid,
 			Payload: []byte(unsentMessage.MessagePayload),
 		})
@@ -121,7 +122,7 @@ func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit
 }
 
 // TODO: use bulk update
-func UpdateOutboxMessagesAsSent(ctx context.Context, querier sqlc.Querier, publishedMessages Messages) error {
+func UpdateOutboxMessagesAsSent(ctx context.Context, querier sqlc.Querier, publishedMessages model.Messages) error {
 	for _, publishedMessage := range publishedMessages {
 		_, err := querier.UpdateOutboxMessageAsSent(ctx, publishedMessage.ID)
 		if err != nil {

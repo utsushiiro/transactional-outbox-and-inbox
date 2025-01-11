@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
 )
 
 type subscriber struct {
@@ -33,7 +34,7 @@ func NewSubscriber(
 	}, nil
 }
 
-func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *message.Message, message.MessageResponder)) error {
+func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *model.Message, message.MessageResponder)) error {
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
 		msgID, err := uuid.Parse(pubsubMsg.Attributes["MessageID"])
 		if err != nil {
@@ -42,7 +43,7 @@ func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, 
 			return
 		}
 
-		msg := &message.Message{
+		msg := &model.Message{
 			ID:      msgID,
 			Payload: pubsubMsg.Data,
 		}
