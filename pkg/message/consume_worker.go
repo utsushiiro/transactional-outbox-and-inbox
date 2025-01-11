@@ -8,13 +8,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type ConsumeWorker struct {
-	dbManager         *rdb.DeprecatedSingleDBManager
+	db                *messagedb.DB
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
@@ -22,12 +21,12 @@ type ConsumeWorker struct {
 }
 
 func NewConsumeWorker(
-	dbManager *rdb.DeprecatedSingleDBManager,
+	db *messagedb.DB,
 	pollingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *ConsumeWorker {
 	return &ConsumeWorker{
-		dbManager:         dbManager,
+		db:                db,
 		pollingInterval:   pollingInterval,
 		timeoutPerProcess: timeoutPerProcess,
 		sleeper:           timeutils.NewRandomSleeper(50*time.Millisecond, 200*time.Millisecond),
@@ -53,10 +52,8 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, c.timeoutPerProcess)
 	defer cancel()
 
-	err := c.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewDeprecatedQuerier(tx)
-
-		unprocessedMessage, err := querier.SelectUnprocessedInboxMessage(ctx)
+	err := c.db.RunInTx(ctx, func(ctx context.Context) error {
+		unprocessedMessage, err := c.db.SelectUnprocessedInboxMessage(ctx)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
@@ -67,14 +64,14 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 
 		// Perform some tasks in the same transaction with updating inbox message as processed.
 		var msg string
-		err = json.Unmarshal(unprocessedMessage.MessagePayload, &msg)
+		err = json.Unmarshal(unprocessedMessage.Payload, &msg)
 		if err != nil {
 			return err
 		}
 		c.sleeper.Sleep() // Simulate task processing time.
 		log.Printf("processed message: %v", msg)
 
-		_, err = querier.UpdateInboxMessageAsProcessed(ctx, unprocessedMessage.MessageUuid)
+		err = c.db.UpdateInboxMessageAsProcessed(ctx, unprocessedMessage.ID)
 		if err != nil {
 			return err
 		}

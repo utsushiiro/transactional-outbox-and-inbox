@@ -2,18 +2,16 @@ package message
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type OutboxWorker struct {
-	dbManager         *rdb.DeprecatedSingleDBManager
+	db                *messagedb.DB
 	publisher         Publisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
@@ -26,13 +24,13 @@ type Publisher interface {
 }
 
 func NewOutboxWorker(
-	dbManager *rdb.DeprecatedSingleDBManager,
+	db *messagedb.DB,
 	publisher Publisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *OutboxWorker {
 	return &OutboxWorker{
-		dbManager:         dbManager,
+		db:                db,
 		publisher:         publisher,
 		pollingInterval:   poolingInterval,
 		timeoutPerProcess: timeoutPerProcess,
@@ -58,33 +56,24 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
 	defer cancel()
 
-	var count int
-	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewDeprecatedQuerier(tx)
-
-		unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, 5)
+	var isSent bool
+	err := p.db.RunInTx(ctx, func(ctx context.Context) error {
+		unsentMsg, err := p.db.SelectUnsentOutboxMessage(ctx)
 		if err != nil {
 			return err
 		}
 
-		for _, unsentMessage := range unsentMessages {
-			err := p.publisher.Publish(ctx, &model.Message{
-				ID:      unsentMessage.MessageUuid,
-				Payload: []byte(unsentMessage.MessagePayload),
-			})
-			if err != nil {
-				return err
-			}
+		err = p.publisher.Publish(ctx, unsentMsg)
+		if err != nil {
+			return err
 		}
 
-		for _, unsentMessage := range unsentMessages {
-			_, err := querier.UpdateOutboxMessageAsSent(ctx, unsentMessage.MessageUuid)
-			if err != nil {
-				return err
-			}
-
-			count++
+		err = p.db.UpdateOutboxMessageAsSent(ctx, unsentMsg.ID)
+		if err != nil {
+			return err
 		}
+
+		isSent = true
 
 		return nil
 	})
@@ -92,8 +81,8 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		return err
 	}
 
-	if count > 0 {
-		log.Printf("published %d unsent messages", count)
+	if isSent {
+		log.Printf("published an unsent messages")
 	} else {
 		log.Printf("no unsent messages")
 	}

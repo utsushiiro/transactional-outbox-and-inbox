@@ -2,25 +2,23 @@ package message
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type ProduceWorker struct {
-	dbManager         *rdb.DeprecatedSingleDBManager
+	db                *messagedb.DB
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.RandomTicker
 }
 
-func NewProduceWorker(dbManager *rdb.DeprecatedSingleDBManager, timeoutPerProcess time.Duration) *ProduceWorker {
+func NewProduceWorker(db *messagedb.DB, timeoutPerProcess time.Duration) *ProduceWorker {
 	return &ProduceWorker{
-		dbManager:         dbManager,
+		db:                db,
 		timeoutPerProcess: timeoutPerProcess,
 	}
 }
@@ -48,9 +46,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
 	defer cancel()
 
-	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewDeprecatedQuerier(tx)
-
+	err := p.db.RunInTx(ctx, func(ctx context.Context) error {
 		// Perform some tasks here in the same transaction with inserting outbox message.
 
 		// In a real-world scenario, this data would be related to the task.
@@ -59,7 +55,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := querier.InsertOutboxMessage(ctx, data); err != nil {
+		if err := p.db.InsertOutboxMessage(ctx, data); err != nil {
 			return err
 		}
 

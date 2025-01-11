@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/msgclient"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/recovery"
 )
 
@@ -18,9 +18,9 @@ func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:5002")
 
-	dbManager, err := rdb.NewDeprecatedSingleDBManager("postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
+	messageDB, err := messagedb.NewDB(mainCtx, "postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
 	if err != nil {
-		log.Fatalf("failed to rdb.NewSingleDBManager: %v", err)
+		log.Fatalf("failed to messagedb.NewDB: %v", err)
 	}
 
 	client, err := msgclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
@@ -29,12 +29,12 @@ func run() {
 	}
 
 	inboxWorkerTimeoutPerProcess := 1 * time.Second
-	inboxWorker := message.NewInboxWorker(dbManager, client, inboxWorkerTimeoutPerProcess)
+	inboxWorker := message.NewInboxWorker(messageDB, client, inboxWorkerTimeoutPerProcess)
 	recovery.Go(inboxWorker.Run)
 
 	consumeInterval := 100 * time.Millisecond
 	consumeWorkerTimeoutPerProcess := 1 * time.Second
-	consumeWorker := message.NewConsumeWorker(dbManager, consumeInterval, consumeWorkerTimeoutPerProcess)
+	consumeWorker := message.NewConsumeWorker(messageDB, consumeInterval, consumeWorkerTimeoutPerProcess)
 	recovery.Go(consumeWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)

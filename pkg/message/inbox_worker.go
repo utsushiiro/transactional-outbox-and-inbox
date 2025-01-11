@@ -2,17 +2,15 @@ package message
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
 )
 
 type InboxWorker struct {
-	dbManager         *rdb.DeprecatedSingleDBManager
+	db                *messagedb.DB
 	subscriber        Subscriber
 	timeoutPerProcess time.Duration
 }
@@ -28,12 +26,12 @@ type MessageResponder interface {
 }
 
 func NewInboxWorker(
-	dbManager *rdb.DeprecatedSingleDBManager,
+	db *messagedb.DB,
 	subscriber Subscriber,
 	timeoutPerProcess time.Duration,
 ) *InboxWorker {
 	return &InboxWorker{
-		dbManager:         dbManager,
+		db:                db,
 		subscriber:        subscriber,
 		timeoutPerProcess: timeoutPerProcess,
 	}
@@ -44,12 +42,10 @@ func (i *InboxWorker) Run() error {
 		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
 		defer cancel()
 
-		err := i.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-			querier := sqlc.NewDeprecatedQuerier(tx)
-
-			_, err := querier.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
-				MessageUuid:    msg.ID,
-				MessagePayload: msg.Payload,
+		err := i.db.RunInTx(ctx, func(ctx context.Context) error {
+			err := i.db.InsertInboxMessage(ctx, &messagedb.InsertInboxMessageParams{
+				MessageID: msg.ID,
+				Payload:   msg.Payload,
 			})
 			if err != nil {
 				return err

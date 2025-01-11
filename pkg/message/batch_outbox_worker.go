@@ -2,19 +2,18 @@ package message
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type BatchOutboxWorker struct {
-	dbManager         *rdb.DeprecatedSingleDBManager
+	db                *messagedb.DB
 	publisher         BatchPublisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
@@ -33,14 +32,14 @@ type BatchResult struct {
 }
 
 func NewBatchOutboxWorker(
-	dbManager *rdb.DeprecatedSingleDBManager,
+	db *messagedb.DB,
 	publisher BatchPublisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 	batchSize int,
 ) *BatchOutboxWorker {
 	return &BatchOutboxWorker{
-		dbManager:         dbManager,
+		db:                db,
 		publisher:         publisher,
 		pollingInterval:   poolingInterval,
 		timeoutPerProcess: timeoutPerProcess,
@@ -68,25 +67,30 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 	defer cancel()
 
 	var publishedCount int
-	err := p.dbManager.RunInTx(ctx, func(ctx context.Context, tx *sql.Tx) error {
-		querier := sqlc.NewDeprecatedQuerier(tx)
-
-		unsentMessages, err := SelectUnsentOutboxMessages(ctx, querier, int32(p.batchSize))
+	err := p.db.RunInTx(ctx, func(ctx context.Context) error {
+		unsentMsgs, err := p.db.SelectUnsentOutboxMessages(ctx, p.batchSize)
 		if err != nil {
 			return err
 		}
 
-		result, err := p.publisher.BatchPublish(ctx, unsentMessages)
+		result, err := p.publisher.BatchPublish(ctx, unsentMsgs)
 		if err != nil {
 			return err
 		}
 
-		publishedMsgs := unsentMessages.Filter(result.FailedIDs)
+		publishedMsgs := unsentMsgs.Filter(result.FailedIDs)
 		publishedCount = len(publishedMsgs)
 
-		err = UpdateOutboxMessagesAsSent(ctx, querier, publishedMsgs)
-		if err != nil {
-			return err
+		// TODO: use bulk update
+		var errs error
+		for _, publishedMsg := range publishedMsgs {
+			err = p.db.UpdateOutboxMessageAsSent(ctx, publishedMsg.ID)
+			if err != nil {
+				errs = errors.Join(errs, err)
+			}
+		}
+		if errs != nil {
+			return errs
 		}
 
 		return nil
@@ -99,35 +103,6 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 		log.Printf("published %d unsent messages", publishedCount)
 	} else {
 		log.Printf("no unsent messages")
-	}
-
-	return nil
-}
-
-func SelectUnsentOutboxMessages(ctx context.Context, querier sqlc.Querier, limit int32) (model.Messages, error) {
-	unsentMessages, err := querier.SelectUnsentOutboxMessages(ctx, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	msgs := make(model.Messages, 0, len(unsentMessages))
-	for _, unsentMessage := range unsentMessages {
-		msgs = append(msgs, &model.Message{
-			ID:      unsentMessage.MessageUuid,
-			Payload: []byte(unsentMessage.MessagePayload),
-		})
-	}
-
-	return msgs, nil
-}
-
-// TODO: use bulk update
-func UpdateOutboxMessagesAsSent(ctx context.Context, querier sqlc.Querier, publishedMessages model.Messages) error {
-	for _, publishedMessage := range publishedMessages {
-		_, err := querier.UpdateOutboxMessageAsSent(ctx, publishedMessage.ID)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
