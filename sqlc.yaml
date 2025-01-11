@@ -1,0 +1,19 @@
+# https://docs.sqlc.dev/en/stable/reference/config.html
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "./pkg/messagedb/sqlc/query.sql"
+    schema: "./middlewares/postgres/initdb.d/02-schema.sql"
+    gen:
+      go:
+        package: "sqlc"
+        out: "./pkg/messagedb/sqlc"
+        sql_package: "pgx/v5"
+        emit_prepared_queries: false
+        emit_interface: true
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.NullUUID"
+            nullable: true

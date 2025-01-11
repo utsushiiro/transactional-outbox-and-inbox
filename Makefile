@@ -6,4 +6,4 @@ build:
 
 .PHONY: sqlc
 sqlc: 
-	sqlc generate --file=$(MAKEFILE_DIR)pkg/sqlc/sqlc.yaml
+	sqlc generate --file=$(MAKEFILE_DIR)sqlc.yaml
