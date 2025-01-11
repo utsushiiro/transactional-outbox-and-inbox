@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -20,11 +19,11 @@ RETURNING message_uuid, message_payload, received_at, processed_at, created_at, 
 
 type InsertInboxMessageParams struct {
 	MessageUuid    uuid.UUID
-	MessagePayload json.RawMessage
+	MessagePayload []byte
 }
 
 func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, insertInboxMessage, arg.MessageUuid, arg.MessagePayload)
+	row := q.db.QueryRow(ctx, insertInboxMessage, arg.MessageUuid, arg.MessagePayload)
 	var i InboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
@@ -43,8 +42,8 @@ VALUES ($1)
 RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
 `
 
-func (q *Queries) InsertOutboxMessage(ctx context.Context, messagePayload json.RawMessage) (OutboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, insertOutboxMessage, messagePayload)
+func (q *Queries) InsertOutboxMessage(ctx context.Context, messagePayload []byte) (OutboxMessage, error) {
+	row := q.db.QueryRow(ctx, insertOutboxMessage, messagePayload)
 	var i OutboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
@@ -66,7 +65,7 @@ FOR UPDATE SKIP LOCKED
 `
 
 func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, selectUnprocessedInboxMessage)
+	row := q.db.QueryRow(ctx, selectUnprocessedInboxMessage)
 	var i InboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
@@ -89,7 +88,7 @@ FOR UPDATE SKIP LOCKED
 `
 
 func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error) {
-	rows, err := q.db.QueryContext(ctx, selectUnsentOutboxMessages, limit)
+	rows, err := q.db.Query(ctx, selectUnsentOutboxMessages, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +107,6 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -125,7 +121,7 @@ RETURNING message_uuid, message_payload, received_at, processed_at, created_at, 
 `
 
 func (q *Queries) UpdateInboxMessageAsProcessed(ctx context.Context, messageUuid uuid.UUID) (InboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, updateInboxMessageAsProcessed, messageUuid)
+	row := q.db.QueryRow(ctx, updateInboxMessageAsProcessed, messageUuid)
 	var i InboxMessage
 	err := row.Scan(
 		&i.MessageUuid,
@@ -146,7 +142,7 @@ RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
 `
 
 func (q *Queries) UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error) {
-	row := q.db.QueryRowContext(ctx, updateOutboxMessageAsSent, messageUuid)
+	row := q.db.QueryRow(ctx, updateOutboxMessageAsSent, messageUuid)
 	var i OutboxMessage
 	err := row.Scan(
 		&i.MessageUuid,

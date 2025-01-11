@@ -5,26 +5,23 @@
 package sqlc
 
 import (
-	"database/sql"
-	"encoding/json"
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type InboxMessage struct {
 	MessageUuid    uuid.UUID
-	MessagePayload json.RawMessage
-	ReceivedAt     time.Time
-	ProcessedAt    sql.NullTime
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	MessagePayload []byte
+	ReceivedAt     pgtype.Timestamp
+	ProcessedAt    pgtype.Timestamp
+	CreatedAt      pgtype.Timestamp
+	UpdatedAt      pgtype.Timestamp
 }
 
 type OutboxMessage struct {
 	MessageUuid    uuid.UUID
-	MessagePayload json.RawMessage
-	SentAt         sql.NullTime
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	MessagePayload []byte
+	SentAt         pgtype.Timestamp
+	CreatedAt      pgtype.Timestamp
+	UpdatedAt      pgtype.Timestamp
 }

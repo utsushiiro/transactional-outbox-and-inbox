@@ -6,14 +6,13 @@ package sqlc
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 )
 
 type Querier interface {
 	InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error)
-	InsertOutboxMessage(ctx context.Context, messagePayload json.RawMessage) (OutboxMessage, error)
+	InsertOutboxMessage(ctx context.Context, messagePayload []byte) (OutboxMessage, error)
 	SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessage, error)
 	SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error)
 	UpdateInboxMessageAsProcessed(ctx context.Context, messageUuid uuid.UUID) (InboxMessage, error)
