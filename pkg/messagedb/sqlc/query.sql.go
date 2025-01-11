@@ -78,6 +78,28 @@ func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessa
 	return i, err
 }
 
+const selectUnsentOutboxMessage = `-- name: SelectUnsentOutboxMessage :one
+SELECT message_uuid, message_payload, sent_at, created_at, updated_at
+FROM outbox_messages
+WHERE sent_at IS NULL
+ORDER BY created_at ASC
+LIMIT 1
+FOR UPDATE SKIP LOCKED
+`
+
+func (q *Queries) SelectUnsentOutboxMessage(ctx context.Context) (OutboxMessage, error) {
+	row := q.db.QueryRow(ctx, selectUnsentOutboxMessage)
+	var i OutboxMessage
+	err := row.Scan(
+		&i.MessageUuid,
+		&i.MessagePayload,
+		&i.SentAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const selectUnsentOutboxMessages = `-- name: SelectUnsentOutboxMessages :many
 SELECT message_uuid, message_payload, sent_at, created_at, updated_at
 FROM outbox_messages

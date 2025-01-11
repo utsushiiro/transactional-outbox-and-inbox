@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
 )
@@ -42,6 +43,9 @@ func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*mod
 
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrResourceNotFound
+		}
 		return nil, err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
 )
 
@@ -26,6 +27,23 @@ func (i *outboxMessages) InsertOutboxMessage(ctx context.Context, messagePayload
 	}
 
 	return nil
+}
+
+func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.Message, error) {
+	q := i.db.getQuerier(ctx)
+
+	raw, err := q.SelectUnsentOutboxMessage(ctx)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+
+	return &model.Message{
+		ID:      raw.MessageUuid,
+		Payload: raw.MessagePayload,
+	}, nil
 }
 
 func (i *outboxMessages) SelectUnsentOutboxMessages(ctx context.Context, size int) (model.Messages, error) {

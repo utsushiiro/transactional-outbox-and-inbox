@@ -17,6 +17,8 @@ type DB struct {
 	*outboxMessages
 }
 
+var ErrResourceNotFound = errors.New("resource not found")
+
 func NewDB(
 	ctx context.Context,
 	userName string,

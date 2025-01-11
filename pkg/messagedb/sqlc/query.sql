@@ -3,6 +3,14 @@ INSERT INTO outbox_messages (message_payload)
 VALUES ($1)
 RETURNING *;
 
+-- name: SelectUnsentOutboxMessage :one
+SELECT *
+FROM outbox_messages
+WHERE sent_at IS NULL
+ORDER BY created_at ASC
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+
 -- name: SelectUnsentOutboxMessages :many
 SELECT *
 FROM outbox_messages
