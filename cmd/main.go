@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/cmd/consumer"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/cmd/producer"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/cmd/consumer"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/cmd/producer"
 )
 
 func main() {

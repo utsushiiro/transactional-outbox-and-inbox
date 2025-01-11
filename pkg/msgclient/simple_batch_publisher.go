@@ -8,8 +8,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
 )
 
 type simpleBatchPublisher struct {

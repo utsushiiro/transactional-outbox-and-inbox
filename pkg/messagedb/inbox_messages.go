@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
 )
 
 type inboxMessages struct {

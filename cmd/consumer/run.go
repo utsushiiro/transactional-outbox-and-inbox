@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/msgclient"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/recovery"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/recovery"
 )
 
 func run() {

@@ -1,4 +1,4 @@
-module github.com/utsushiiro/transactional-outbox-and-inbox/app
+module github.com/utsushiiro/transactional-outbox-and-inbox
 
 go 1.23.3
 

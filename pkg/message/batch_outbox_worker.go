@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/rdb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/sqlc"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/timeutils"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/rdb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type BatchOutboxWorker struct {

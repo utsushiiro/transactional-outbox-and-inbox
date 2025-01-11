@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
 )
 
 type outboxMessages struct {
