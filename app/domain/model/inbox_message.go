@@ -2,20 +2,20 @@ package model
 
 import "github.com/google/uuid"
 
-type Message struct {
+type InboxMessage struct {
 	ID      uuid.UUID
 	Payload []byte
 }
 
-type Messages []*Message
+type InboxMessages []*InboxMessage
 
-func (ms Messages) Filter(excludeIDs []uuid.UUID) Messages {
+func (ms InboxMessages) Filter(excludeIDs []uuid.UUID) InboxMessages {
 	var excludeIDMap = make(map[uuid.UUID]struct{}, len(excludeIDs))
 	for _, id := range excludeIDs {
 		excludeIDMap[id] = struct{}{}
 	}
 
-	var filteredMessages Messages
+	var filteredMessages InboxMessages
 	for _, m := range ms {
 		if _, ok := excludeIDMap[m.ID]; !ok {
 			filteredMessages = append(filteredMessages, m)

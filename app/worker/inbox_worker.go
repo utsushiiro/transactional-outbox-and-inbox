@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
@@ -29,7 +28,7 @@ func NewInboxWorker(
 }
 
 func (i *InboxWorker) Run() error {
-	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *model.Message, msgResponder mq.MessageResponder) {
+	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *mq.Message, msgResponder mq.MessageResponder) {
 		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
 		defer cancel()
 

@@ -4,16 +4,15 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
 )
 
 type Publisher interface {
-	Publish(ctx context.Context, msg *model.Message) error
+	Publish(ctx context.Context, msg *Message) error
 	Close() error
 }
 
 type BatchPublisher interface {
-	BatchPublish(ctx context.Context, msgs []*model.Message) (*BatchResult, error)
+	BatchPublish(ctx context.Context, msgs []*Message) (*BatchResult, error)
 	Close() error
 }
 

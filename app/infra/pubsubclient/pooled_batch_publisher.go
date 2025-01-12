@@ -9,7 +9,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gammazero/workerpool"
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
@@ -34,7 +33,7 @@ func NewPooledBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*mq.BatchResult, error) {
+func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*mq.Message) (*mq.BatchResult, error) {
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))

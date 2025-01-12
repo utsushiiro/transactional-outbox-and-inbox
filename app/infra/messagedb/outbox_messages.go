@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 )
 
 type outboxMessages struct {
@@ -29,7 +29,7 @@ func (i *outboxMessages) InsertOutboxMessage(ctx context.Context, messagePayload
 	return nil
 }
 
-func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.Message, error) {
+func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.OutboxMessage, error) {
 	q := i.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnsentOutboxMessage(ctx)
@@ -40,13 +40,13 @@ func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.
 		return nil, err
 	}
 
-	return &model.Message{
+	return &model.OutboxMessage{
 		ID:      raw.MessageUuid,
 		Payload: raw.MessagePayload,
 	}, nil
 }
 
-func (i *outboxMessages) SelectUnsentOutboxMessages(ctx context.Context, size int) (model.Messages, error) {
+func (i *outboxMessages) SelectUnsentOutboxMessages(ctx context.Context, size int) (model.OutboxMessages, error) {
 	q := i.db.getQuerier(ctx)
 
 	raws, err := q.SelectUnsentOutboxMessages(ctx, int32(size))
@@ -54,9 +54,9 @@ func (i *outboxMessages) SelectUnsentOutboxMessages(ctx context.Context, size in
 		return nil, err
 	}
 
-	msgs := make(model.Messages, 0, len(raws))
+	msgs := make(model.OutboxMessages, 0, len(raws))
 	for _, rawMsg := range raws {
-		msgs = append(msgs, &model.Message{
+		msgs = append(msgs, &model.OutboxMessage{
 			ID:      rawMsg.MessageUuid,
 			Payload: rawMsg.MessagePayload,
 		})

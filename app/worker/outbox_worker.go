@@ -58,7 +58,10 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 			return err
 		}
 
-		err = p.publisher.Publish(ctx, unsentMsg)
+		err = p.publisher.Publish(ctx, &mq.Message{
+			ID:      unsentMsg.ID,
+			Payload: unsentMsg.Payload,
+		})
 		if err != nil {
 			return err
 		}

@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
 )
 
 type inboxMessages struct {
@@ -38,7 +38,7 @@ func (i *inboxMessages) InsertInboxMessage(ctx context.Context, param *InsertInb
 	return nil
 }
 
-func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*model.Message, error) {
+func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*model.InboxMessage, error) {
 	q := i.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
@@ -49,7 +49,7 @@ func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*mod
 		return nil, err
 	}
 
-	return &model.Message{
+	return &model.InboxMessage{
 		ID:      raw.MessageUuid,
 		Payload: raw.MessagePayload,
 	}, nil

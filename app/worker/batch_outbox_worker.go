@@ -62,7 +62,15 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 			return err
 		}
 
-		result, err := p.publisher.BatchPublish(ctx, unsentMsgs)
+		mqMsgs := make(mq.Messages, 0, len(unsentMsgs))
+		for _, unsentMsg := range unsentMsgs {
+			mqMsgs = append(mqMsgs, &mq.Message{
+				ID:      unsentMsg.ID,
+				Payload: unsentMsg.Payload,
+			})
+		}
+
+		result, err := p.publisher.BatchPublish(ctx, mqMsgs)
 		if err != nil {
 			return err
 		}
