@@ -3,42 +3,27 @@ package messagedb
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 )
 
-type inboxMessages struct {
+type InboxMessages struct {
 	db *DB
 }
 
-func newInboxMessages(db *DB) *inboxMessages {
-	return &inboxMessages{
+var _ messagedb.InboxMessages = &InboxMessages{}
+
+func NewInboxMessages(
+	db *DB,
+) *InboxMessages {
+	return &InboxMessages{
 		db: db,
 	}
 }
 
-type InsertInboxMessageParams struct {
-	MessageID uuid.UUID
-	Payload   []byte
-}
-
-func (i *inboxMessages) InsertInboxMessage(ctx context.Context, param *InsertInboxMessageParams) error {
-	q := i.db.getQuerier(ctx)
-
-	_, err := q.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
-		MessageUuid:    param.MessageID,
-		MessagePayload: param.Payload,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*model.InboxMessage, error) {
+func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*model.InboxMessage, error) {
 	q := i.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
@@ -55,10 +40,31 @@ func (i *inboxMessages) SelectUnprocessedInboxMessage(ctx context.Context) (*mod
 	}, nil
 }
 
-func (i *inboxMessages) UpdateInboxMessageAsProcessed(ctx context.Context, messageID uuid.UUID) error {
+func (i *InboxMessages) Insert(ctx context.Context, inboxMessage *model.InboxMessage) error {
 	q := i.db.getQuerier(ctx)
 
-	_, err := q.UpdateInboxMessageAsProcessed(ctx, messageID)
+	err := q.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
+		MessageUuid:    inboxMessage.ID,
+		MessagePayload: inboxMessage.Payload,
+		ReceivedAt:     inboxMessage.ReceivedAt,
+		ProcessedAt:    inboxMessage.ProcessedAt,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *InboxMessages) Update(ctx context.Context, inboxMessage *model.InboxMessage) error {
+	q := i.db.getQuerier(ctx)
+
+	err := q.UpdateInboxMessage(ctx, sqlc.UpdateInboxMessageParams{
+		MessageUuid:    inboxMessage.ID,
+		MessagePayload: inboxMessage.Payload,
+		ReceivedAt:     inboxMessage.ReceivedAt,
+		ProcessedAt:    inboxMessage.ProcessedAt,
+	})
 	if err != nil {
 		return err
 	}

@@ -12,9 +12,6 @@ import (
 
 type DB struct {
 	pool *pgxpool.Pool
-
-	*inboxMessages
-	*outboxMessages
 }
 
 var ErrResourceNotFound = errors.New("resource not found")
@@ -41,9 +38,6 @@ func NewDB(
 	db := &DB{
 		pool: pool,
 	}
-
-	db.inboxMessages = newInboxMessages(db)
-	db.outboxMessages = newOutboxMessages(db)
 
 	return db, nil
 }

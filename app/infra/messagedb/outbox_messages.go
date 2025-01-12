@@ -2,35 +2,31 @@ package messagedb
 
 import (
 	"context"
+	"fmt"
+	"math"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 )
 
-type outboxMessages struct {
+type OutboxMessages struct {
 	db *DB
 }
 
-func newOutboxMessages(db *DB) *outboxMessages {
-	return &outboxMessages{
+var _ messagedb.OutboxMessages = &OutboxMessages{}
+
+func NewOutboxMessages(
+	db *DB,
+) *OutboxMessages {
+	return &OutboxMessages{
 		db: db,
 	}
 }
 
-func (i *outboxMessages) InsertOutboxMessage(ctx context.Context, messagePayload []byte) error {
-	q := i.db.getQuerier(ctx)
-
-	_, err := q.InsertOutboxMessage(ctx, messagePayload)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.OutboxMessage, error) {
-	q := i.db.getQuerier(ctx)
+func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.OutboxMessage, error) {
+	q := o.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnsentOutboxMessage(ctx)
 	if err != nil {
@@ -43,32 +39,60 @@ func (i *outboxMessages) SelectUnsentOutboxMessage(ctx context.Context) (*model.
 	return &model.OutboxMessage{
 		ID:      raw.MessageUuid,
 		Payload: raw.MessagePayload,
+		SentAt:  raw.SentAt,
 	}, nil
 }
 
-func (i *outboxMessages) SelectUnsentOutboxMessages(ctx context.Context, size int) (model.OutboxMessages, error) {
-	q := i.db.getQuerier(ctx)
+func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int) (model.OutboxMessages, error) {
+	q := o.db.getQuerier(ctx)
+
+	if size > math.MaxInt32 {
+		return nil, fmt.Errorf("size must be less than %d", math.MaxInt32)
+	}
 
 	raws, err := q.SelectUnsentOutboxMessages(ctx, int32(size))
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrResourceNotFound
+		}
 		return nil, err
 	}
 
-	msgs := make(model.OutboxMessages, 0, len(raws))
-	for _, rawMsg := range raws {
-		msgs = append(msgs, &model.OutboxMessage{
-			ID:      rawMsg.MessageUuid,
-			Payload: rawMsg.MessagePayload,
-		})
+	outboxMessages := make(model.OutboxMessages, len(raws))
+	for i, raw := range raws {
+		outboxMessages[i] = &model.OutboxMessage{
+			ID:      raw.MessageUuid,
+			Payload: raw.MessagePayload,
+			SentAt:  raw.SentAt,
+		}
 	}
 
-	return msgs, nil
+	return outboxMessages, nil
 }
 
-func (i *outboxMessages) UpdateOutboxMessageAsSent(ctx context.Context, messageID uuid.UUID) error {
-	q := i.db.getQuerier(ctx)
+func (o *OutboxMessages) Insert(ctx context.Context, outboxMessage *model.OutboxMessage) error {
+	q := o.db.getQuerier(ctx)
 
-	_, err := q.UpdateOutboxMessageAsSent(ctx, messageID)
+	err := q.InsertOutboxMessage(ctx, sqlc.InsertOutboxMessageParams{
+		MessageUuid:    outboxMessage.ID,
+		MessagePayload: outboxMessage.Payload,
+		SentAt:         outboxMessage.SentAt,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *OutboxMessages) Update(ctx context.Context, outboxMessage *model.OutboxMessage) error {
+	q := o.db.getQuerier(ctx)
+
+	err := q.UpdateOutboxMessage(ctx, sqlc.UpdateOutboxMessageParams{
+		MessageUuid:    outboxMessage.ID,
+		MessagePayload: outboxMessage.Payload,
+		SentAt:         outboxMessage.SentAt,
+	})
 	if err != nil {
 		return err
 	}

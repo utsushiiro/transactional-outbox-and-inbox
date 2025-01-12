@@ -7,55 +7,54 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-const insertInboxMessage = `-- name: InsertInboxMessage :one
-INSERT INTO inbox_messages (message_uuid, message_payload, received_at)
-VALUES ($1, $2, NOW())
-RETURNING message_uuid, message_payload, received_at, processed_at, created_at, updated_at
+const insertInboxMessage = `-- name: InsertInboxMessage :exec
+INSERT INTO inbox_messages (message_uuid, message_payload, received_at, processed_at)
+VALUES ($1, $2, $3, $4)
 `
 
 type InsertInboxMessageParams struct {
 	MessageUuid    uuid.UUID
 	MessagePayload []byte
+	ReceivedAt     time.Time
+	ProcessedAt    *time.Time
 }
 
-func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error) {
-	row := q.db.QueryRow(ctx, insertInboxMessage, arg.MessageUuid, arg.MessagePayload)
-	var i InboxMessage
-	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
-		&i.ReceivedAt,
-		&i.ProcessedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) error {
+	_, err := q.db.Exec(ctx, insertInboxMessage,
+		arg.MessageUuid,
+		arg.MessagePayload,
+		arg.ReceivedAt,
+		arg.ProcessedAt,
 	)
-	return i, err
+	return err
 }
 
-const insertOutboxMessage = `-- name: InsertOutboxMessage :one
-INSERT INTO outbox_messages (message_payload)
-VALUES ($1)
-RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
+const insertOutboxMessage = `-- name: InsertOutboxMessage :exec
+INSERT INTO outbox_messages (message_uuid, message_payload, sent_at)
+VALUES ($1, $2, $3)
 `
 
-func (q *Queries) InsertOutboxMessage(ctx context.Context, messagePayload []byte) (OutboxMessage, error) {
-	row := q.db.QueryRow(ctx, insertOutboxMessage, messagePayload)
-	var i OutboxMessage
-	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
-		&i.SentAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+type InsertOutboxMessageParams struct {
+	MessageUuid    uuid.UUID
+	MessagePayload []byte
+	SentAt         *time.Time
+}
+
+func (q *Queries) InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) error {
+	_, err := q.db.Exec(ctx, insertOutboxMessage, arg.MessageUuid, arg.MessagePayload, arg.SentAt)
+	return err
 }
 
 const selectUnprocessedInboxMessage = `-- name: SelectUnprocessedInboxMessage :one
+/**
+ * inbox_messages table
+ */
+
 SELECT message_uuid, message_payload, received_at, processed_at, created_at, updated_at
 FROM inbox_messages
 WHERE processed_at IS NULL
@@ -79,6 +78,10 @@ func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessa
 }
 
 const selectUnsentOutboxMessage = `-- name: SelectUnsentOutboxMessage :one
+/**
+ * outbox_messages table
+ */
+
 SELECT message_uuid, message_payload, sent_at, created_at, updated_at
 FROM outbox_messages
 WHERE sent_at IS NULL
@@ -135,43 +138,42 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 	return items, nil
 }
 
-const updateInboxMessageAsProcessed = `-- name: UpdateInboxMessageAsProcessed :one
+const updateInboxMessage = `-- name: UpdateInboxMessage :exec
 UPDATE inbox_messages
-SET processed_at = NOW()
+SET message_payload = $2, received_at = $3, processed_at = $4
 WHERE message_uuid = $1
-RETURNING message_uuid, message_payload, received_at, processed_at, created_at, updated_at
 `
 
-func (q *Queries) UpdateInboxMessageAsProcessed(ctx context.Context, messageUuid uuid.UUID) (InboxMessage, error) {
-	row := q.db.QueryRow(ctx, updateInboxMessageAsProcessed, messageUuid)
-	var i InboxMessage
-	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
-		&i.ReceivedAt,
-		&i.ProcessedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+type UpdateInboxMessageParams struct {
+	MessageUuid    uuid.UUID
+	MessagePayload []byte
+	ReceivedAt     time.Time
+	ProcessedAt    *time.Time
 }
 
-const updateOutboxMessageAsSent = `-- name: UpdateOutboxMessageAsSent :one
+func (q *Queries) UpdateInboxMessage(ctx context.Context, arg UpdateInboxMessageParams) error {
+	_, err := q.db.Exec(ctx, updateInboxMessage,
+		arg.MessageUuid,
+		arg.MessagePayload,
+		arg.ReceivedAt,
+		arg.ProcessedAt,
+	)
+	return err
+}
+
+const updateOutboxMessage = `-- name: UpdateOutboxMessage :exec
 UPDATE outbox_messages
-SET sent_at = NOW()
+SET message_payload = $2, sent_at = $3
 WHERE message_uuid = $1
-RETURNING message_uuid, message_payload, sent_at, created_at, updated_at
 `
 
-func (q *Queries) UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error) {
-	row := q.db.QueryRow(ctx, updateOutboxMessageAsSent, messageUuid)
-	var i OutboxMessage
-	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
-		&i.SentAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+type UpdateOutboxMessageParams struct {
+	MessageUuid    uuid.UUID
+	MessagePayload []byte
+	SentAt         *time.Time
+}
+
+func (q *Queries) UpdateOutboxMessage(ctx context.Context, arg UpdateOutboxMessageParams) error {
+	_, err := q.db.Exec(ctx, updateOutboxMessage, arg.MessageUuid, arg.MessagePayload, arg.SentAt)
+	return err
 }

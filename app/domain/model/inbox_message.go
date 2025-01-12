@@ -1,10 +1,29 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type InboxMessage struct {
-	ID      uuid.UUID
-	Payload []byte
+	ID          uuid.UUID
+	Payload     []byte
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
+}
+
+func NewInboxMessage(id uuid.UUID, payload []byte) *InboxMessage {
+	return &InboxMessage{
+		ID:         id,
+		Payload:    payload,
+		ReceivedAt: time.Now(),
+	}
+}
+
+func (i *InboxMessage) MarkAsProcessed() {
+	now := time.Now()
+	i.ProcessedAt = &now
 }
 
 type InboxMessages []*InboxMessage

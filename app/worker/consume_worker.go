@@ -8,25 +8,34 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type ConsumeWorker struct {
-	db                *messagedb.DB
+	db                ConsumeWorkerMessageDBDeps
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
 	sleeper           *timeutils.RandomSleeper
 }
 
+type ConsumeWorkerMessageDBDeps struct {
+	messagedb.Transactor
+	inboxMessages messagedb.InboxMessages
+}
+
 func NewConsumeWorker(
-	db *messagedb.DB,
+	transactor messagedb.Transactor,
+	inboxMessages messagedb.InboxMessages,
 	pollingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *ConsumeWorker {
 	return &ConsumeWorker{
-		db:                db,
+		db: ConsumeWorkerMessageDBDeps{
+			Transactor:    transactor,
+			inboxMessages: inboxMessages,
+		},
 		pollingInterval:   pollingInterval,
 		timeoutPerProcess: timeoutPerProcess,
 		sleeper:           timeutils.NewRandomSleeper(50*time.Millisecond, 200*time.Millisecond),
@@ -53,7 +62,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 	defer cancel()
 
 	err := c.db.RunInTx(ctx, func(ctx context.Context) error {
-		unprocessedMessage, err := c.db.SelectUnprocessedInboxMessage(ctx)
+		unprocessedMessage, err := c.db.inboxMessages.SelectUnprocessedOneWithLock(ctx)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
@@ -71,7 +80,10 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 		c.sleeper.Sleep() // Simulate task processing time.
 		log.Printf("processed message: %v", msg)
 
-		err = c.db.UpdateInboxMessageAsProcessed(ctx, unprocessedMessage.ID)
+		// After processing, mark the message as processed.
+		unprocessedMessage.MarkAsProcessed()
+
+		err = c.db.inboxMessages.Update(ctx, unprocessedMessage)
 		if err != nil {
 			return err
 		}

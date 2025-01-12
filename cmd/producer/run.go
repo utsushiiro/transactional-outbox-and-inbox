@@ -23,6 +23,8 @@ func run() {
 		log.Fatalf("failed to messagedb.NewDB: %v", err)
 	}
 
+	outboxMessages := messagedb.NewOutboxMessages(messageDB)
+
 	client, err := pubsubclient.NewPublisher(mainCtx, "my-project", "my-topic")
 	if err != nil {
 		log.Fatalf("failed to pubsubclient.NewPublisher: %v", err)
@@ -35,16 +37,16 @@ func run() {
 
 	outboxWorkerPoolingInterval := 1 * time.Second
 	outboxWorkerTimeoutPerProcess := 1 * time.Second
-	outboxWorker := worker.NewOutboxWorker(messageDB, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
+	outboxWorker := worker.NewOutboxWorker(messageDB, outboxMessages, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
 	recovery.Go(outboxWorker.Run)
 
 	batchOutboxWorkerPoolingInterval := 1 * time.Second
 	batchOutboxWorkerTimeoutPerProcess := 1 * time.Second
-	batchOutboxWorker := worker.NewBatchOutboxWorker(messageDB, batchClient, batchOutboxWorkerPoolingInterval, batchOutboxWorkerTimeoutPerProcess, 10)
+	batchOutboxWorker := worker.NewBatchOutboxWorker(messageDB, outboxMessages, batchClient, batchOutboxWorkerPoolingInterval, batchOutboxWorkerTimeoutPerProcess, 10)
 	recovery.Go(batchOutboxWorker.Run)
 
 	produceWorkerTimeoutPerProcess := 1 * time.Second
-	produceWorker := worker.NewProduceWorker(messageDB, produceWorkerTimeoutPerProcess)
+	produceWorker := worker.NewProduceWorker(messageDB, outboxMessages, produceWorkerTimeoutPerProcess)
 	recovery.Go(produceWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)

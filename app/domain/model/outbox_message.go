@@ -1,10 +1,27 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type OutboxMessage struct {
 	ID      uuid.UUID
 	Payload []byte
+	SentAt  *time.Time
+}
+
+func NewOutboxMessage(payload []byte) *OutboxMessage {
+	return &OutboxMessage{
+		ID:      uuid.New(),
+		Payload: payload,
+	}
+}
+
+func (m *OutboxMessage) MarkAsSent() {
+	now := time.Now()
+	m.SentAt = &now
 }
 
 type OutboxMessages []*OutboxMessage

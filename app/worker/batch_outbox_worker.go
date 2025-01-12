@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type BatchOutboxWorker struct {
-	db                *messagedb.DB
+	db                BatchOutboxWorkerMessageDBDeps
 	publisher         mq.BatchPublisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
@@ -20,15 +20,24 @@ type BatchOutboxWorker struct {
 	ticker            *timeutils.Ticker
 }
 
+type BatchOutboxWorkerMessageDBDeps struct {
+	messagedb.Transactor
+	outboxMessages messagedb.OutboxMessages
+}
+
 func NewBatchOutboxWorker(
-	db *messagedb.DB,
+	transactor messagedb.Transactor,
+	outboxMessages messagedb.OutboxMessages,
 	publisher mq.BatchPublisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 	batchSize int,
 ) *BatchOutboxWorker {
 	return &BatchOutboxWorker{
-		db:                db,
+		db: BatchOutboxWorkerMessageDBDeps{
+			Transactor:     transactor,
+			outboxMessages: outboxMessages,
+		},
 		publisher:         publisher,
 		pollingInterval:   poolingInterval,
 		timeoutPerProcess: timeoutPerProcess,
@@ -57,31 +66,33 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 
 	var publishedCount int
 	err := p.db.RunInTx(ctx, func(ctx context.Context) error {
-		unsentMsgs, err := p.db.SelectUnsentOutboxMessages(ctx, p.batchSize)
+		unsentOutboxMessages, err := p.db.outboxMessages.SelectUnsentManyWithLock(ctx, p.batchSize)
 		if err != nil {
 			return err
 		}
 
-		mqMsgs := make(mq.Messages, 0, len(unsentMsgs))
-		for _, unsentMsg := range unsentMsgs {
-			mqMsgs = append(mqMsgs, &mq.Message{
-				ID:      unsentMsg.ID,
-				Payload: unsentMsg.Payload,
+		mqMessages := make(mq.Messages, 0, len(unsentOutboxMessages))
+		for _, unsentMessage := range unsentOutboxMessages {
+			mqMessages = append(mqMessages, &mq.Message{
+				ID:      unsentMessage.ID,
+				Payload: unsentMessage.Payload,
 			})
 		}
 
-		result, err := p.publisher.BatchPublish(ctx, mqMsgs)
+		result, err := p.publisher.BatchPublish(ctx, mqMessages)
 		if err != nil {
 			return err
 		}
 
-		publishedMsgs := unsentMsgs.Filter(result.FailedIDs)
-		publishedCount = len(publishedMsgs)
+		publishedOutboxMessages := unsentOutboxMessages.Filter(result.FailedIDs)
+		publishedCount = len(publishedOutboxMessages)
 
-		// TODO: use bulk update
 		var errs error
-		for _, publishedMsg := range publishedMsgs {
-			err = p.db.UpdateOutboxMessageAsSent(ctx, publishedMsg.ID)
+		for _, publishedOutboxMessage := range publishedOutboxMessages {
+			publishedOutboxMessage.MarkAsSent()
+
+			// TODO: use bulk update
+			err = p.db.outboxMessages.Update(ctx, publishedOutboxMessage)
 			if err != nil {
 				errs = errors.Join(errs, err)
 			}

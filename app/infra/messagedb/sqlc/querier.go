@@ -6,18 +6,16 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 type Querier interface {
-	InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) (InboxMessage, error)
-	InsertOutboxMessage(ctx context.Context, messagePayload []byte) (OutboxMessage, error)
+	InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) error
+	InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) error
 	SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessage, error)
 	SelectUnsentOutboxMessage(ctx context.Context) (OutboxMessage, error)
 	SelectUnsentOutboxMessages(ctx context.Context, limit int32) ([]OutboxMessage, error)
-	UpdateInboxMessageAsProcessed(ctx context.Context, messageUuid uuid.UUID) (InboxMessage, error)
-	UpdateOutboxMessageAsSent(ctx context.Context, messageUuid uuid.UUID) (OutboxMessage, error)
+	UpdateInboxMessage(ctx context.Context, arg UpdateInboxMessageParams) error
+	UpdateOutboxMessage(ctx context.Context, arg UpdateOutboxMessageParams) error
 }
 
 var _ Querier = (*Queries)(nil)

@@ -23,18 +23,20 @@ func run() {
 		log.Fatalf("failed to messagedb.NewDB: %v", err)
 	}
 
+	inboxMessages := messagedb.NewInboxMessages(messageDB)
+
 	client, err := pubsubclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
 	if err != nil {
 		log.Fatalf("failed to pubsubclient.NewSubscriber: %v", err)
 	}
 
 	inboxWorkerTimeoutPerProcess := 1 * time.Second
-	inboxWorker := worker.NewInboxWorker(messageDB, client, inboxWorkerTimeoutPerProcess)
+	inboxWorker := worker.NewInboxWorker(messageDB, inboxMessages, client, inboxWorkerTimeoutPerProcess)
 	recovery.Go(inboxWorker.Run)
 
 	consumeInterval := 100 * time.Millisecond
 	consumeWorkerTimeoutPerProcess := 1 * time.Second
-	consumeWorker := worker.NewConsumeWorker(messageDB, consumeInterval, consumeWorkerTimeoutPerProcess)
+	consumeWorker := worker.NewConsumeWorker(messageDB, inboxMessages, consumeInterval, consumeWorkerTimeoutPerProcess)
 	recovery.Go(consumeWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)

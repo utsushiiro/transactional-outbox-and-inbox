@@ -5,23 +5,33 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type InboxWorker struct {
-	db                *messagedb.DB
+	db                inboxWorkerMessageDBDeps
 	subscriber        mq.Subscriber
 	timeoutPerProcess time.Duration
 }
 
+type inboxWorkerMessageDBDeps struct {
+	messagedb.Transactor
+	inboxMessages messagedb.InboxMessages
+}
+
 func NewInboxWorker(
-	db *messagedb.DB,
+	transactor messagedb.Transactor,
+	inboxMessages messagedb.InboxMessages,
 	subscriber mq.Subscriber,
 	timeoutPerProcess time.Duration,
 ) *InboxWorker {
 	return &InboxWorker{
-		db:                db,
+		db: inboxWorkerMessageDBDeps{
+			Transactor:    transactor,
+			inboxMessages: inboxMessages,
+		},
 		subscriber:        subscriber,
 		timeoutPerProcess: timeoutPerProcess,
 	}
@@ -33,10 +43,9 @@ func (i *InboxWorker) Run() error {
 		defer cancel()
 
 		err := i.db.RunInTx(ctx, func(ctx context.Context) error {
-			err := i.db.InsertInboxMessage(ctx, &messagedb.InsertInboxMessageParams{
-				MessageID: msg.ID,
-				Payload:   msg.Payload,
-			})
+			inboxMessage := model.NewInboxMessage(msg.ID, msg.Payload)
+
+			err := i.db.inboxMessages.Insert(ctx, inboxMessage)
 			if err != nil {
 				return err
 			}

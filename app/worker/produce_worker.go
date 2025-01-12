@@ -6,19 +6,32 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type ProduceWorker struct {
-	db                *messagedb.DB
+	db                produceWorkerMessageDBDeps
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.RandomTicker
 }
 
-func NewProduceWorker(db *messagedb.DB, timeoutPerProcess time.Duration) *ProduceWorker {
+type produceWorkerMessageDBDeps struct {
+	messagedb.Transactor
+	outboxMessages messagedb.OutboxMessages
+}
+
+func NewProduceWorker(
+	transactor messagedb.Transactor,
+	outboxMessages messagedb.OutboxMessages,
+	timeoutPerProcess time.Duration,
+) *ProduceWorker {
 	return &ProduceWorker{
-		db:                db,
+		db: produceWorkerMessageDBDeps{
+			Transactor:     transactor,
+			outboxMessages: outboxMessages,
+		},
 		timeoutPerProcess: timeoutPerProcess,
 	}
 }
@@ -55,7 +68,9 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 			return err
 		}
 
-		if err := p.db.InsertOutboxMessage(ctx, data); err != nil {
+		outboxMessage := model.NewOutboxMessage(data)
+
+		if err := p.db.outboxMessages.Insert(ctx, outboxMessage); err != nil {
 			return err
 		}
 
