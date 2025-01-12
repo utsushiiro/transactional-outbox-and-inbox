@@ -1,4 +1,4 @@
-package msgclient
+package pubsubclient
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gammazero/workerpool"
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type pooledBatchPublisher struct {
@@ -19,7 +19,7 @@ type pooledBatchPublisher struct {
 	workerPool *workerpool.WorkerPool
 }
 
-var _ message.BatchPublisher = (*pooledBatchPublisher)(nil)
+var _ mq.BatchPublisher = (*pooledBatchPublisher)(nil)
 
 func NewPooledBatchPublisher(ctx context.Context, projectID string, topic string, workerPoolSize int) (*pooledBatchPublisher, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
@@ -34,7 +34,7 @@ func NewPooledBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*message.BatchResult, error) {
+func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*mq.BatchResult, error) {
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))
@@ -75,7 +75,7 @@ func (p *pooledBatchPublisher) BatchPublish(ctx context.Context, messages []*mod
 			succeededIDs = append(succeededIDs, messages[i].ID)
 		}
 	}
-	batchResult := &message.BatchResult{
+	batchResult := &mq.BatchResult{
 		SucceededIDs: succeededIDs,
 		FailedIDs:    failedIDs,
 	}

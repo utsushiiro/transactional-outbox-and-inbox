@@ -1,4 +1,4 @@
-package message
+package worker
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 

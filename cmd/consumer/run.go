@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/pubsubclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/recovery"
 )
 
@@ -23,18 +23,18 @@ func run() {
 		log.Fatalf("failed to messagedb.NewDB: %v", err)
 	}
 
-	client, err := msgclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
+	client, err := pubsubclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
 	if err != nil {
-		log.Fatalf("failed to msgclient.NewSubscriber: %v", err)
+		log.Fatalf("failed to pubsubclient.NewSubscriber: %v", err)
 	}
 
 	inboxWorkerTimeoutPerProcess := 1 * time.Second
-	inboxWorker := message.NewInboxWorker(messageDB, client, inboxWorkerTimeoutPerProcess)
+	inboxWorker := worker.NewInboxWorker(messageDB, client, inboxWorkerTimeoutPerProcess)
 	recovery.Go(inboxWorker.Run)
 
 	consumeInterval := 100 * time.Millisecond
 	consumeWorkerTimeoutPerProcess := 1 * time.Second
-	consumeWorker := message.NewConsumeWorker(messageDB, consumeInterval, consumeWorkerTimeoutPerProcess)
+	consumeWorker := worker.NewConsumeWorker(messageDB, consumeInterval, consumeWorkerTimeoutPerProcess)
 	recovery.Go(consumeWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)

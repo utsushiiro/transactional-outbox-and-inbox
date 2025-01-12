@@ -1,12 +1,12 @@
-package msgclient
+package pubsubclient
 
 import (
 	"context"
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type publisher struct {
@@ -14,7 +14,7 @@ type publisher struct {
 	topic  *pubsub.Topic
 }
 
-var _ message.Publisher = (*publisher)(nil)
+var _ mq.Publisher = (*publisher)(nil)
 
 func NewPublisher(ctx context.Context, projectID string, topic string) (*publisher, error) {
 	client, err := pubsub.NewClient(ctx, projectID)

@@ -1,4 +1,4 @@
-package msgclient
+package pubsubclient
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type simpleBatchPublisher struct {
@@ -18,7 +18,7 @@ type simpleBatchPublisher struct {
 	workerLimitSize int
 }
 
-var _ message.BatchPublisher = (*simpleBatchPublisher)(nil)
+var _ mq.BatchPublisher = (*simpleBatchPublisher)(nil)
 
 func NewSimpleBatchPublisher(ctx context.Context, projectID string, topic string, workerLimitSize int) (*simpleBatchPublisher, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
@@ -33,7 +33,7 @@ func NewSimpleBatchPublisher(ctx context.Context, projectID string, topic string
 	}, nil
 }
 
-func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*message.BatchResult, error) {
+func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*model.Message) (*mq.BatchResult, error) {
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))
@@ -80,7 +80,7 @@ func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*mod
 			succeededIDs = append(succeededIDs, messages[i].ID)
 		}
 	}
-	batchResult := &message.BatchResult{
+	batchResult := &mq.BatchResult{
 		SucceededIDs: succeededIDs,
 		FailedIDs:    failedIDs,
 	}

@@ -2,12 +2,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "./pkg/messagedb/sqlc/query.sql"
+    queries: "./pkg/infra/messagedb/sqlc/query.sql"
     schema: "./middlewares/postgres/initdb.d/02-schema.sql"
     gen:
       go:
         package: "sqlc"
-        out: "./pkg/messagedb/sqlc"
+        out: "./pkg/infra/messagedb/sqlc"
         sql_package: "pgx/v5"
         emit_prepared_queries: false
         emit_interface: true

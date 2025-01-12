@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
 )
 
 type DB struct {

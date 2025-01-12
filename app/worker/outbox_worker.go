@@ -1,31 +1,26 @@
-package message
+package worker
 
 import (
 	"context"
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type OutboxWorker struct {
 	db                *messagedb.DB
-	publisher         Publisher
+	publisher         mq.Publisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	ticker            *timeutils.Ticker
 }
 
-type Publisher interface {
-	Publish(ctx context.Context, msg *model.Message) error
-	Close() error
-}
-
 func NewOutboxWorker(
 	db *messagedb.DB,
-	publisher Publisher,
+	publisher mq.Publisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 ) *OutboxWorker {

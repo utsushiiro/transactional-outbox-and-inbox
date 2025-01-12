@@ -1,33 +1,24 @@
-package message
+package worker
 
 import (
 	"context"
 	"log"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type InboxWorker struct {
 	db                *messagedb.DB
-	subscriber        Subscriber
+	subscriber        mq.Subscriber
 	timeoutPerProcess time.Duration
-}
-
-type Subscriber interface {
-	Receive(ctx context.Context, handler func(context.Context, *model.Message, MessageResponder)) error
-	Close() error
-}
-
-type MessageResponder interface {
-	Ack()
-	Nack()
 }
 
 func NewInboxWorker(
 	db *messagedb.DB,
-	subscriber Subscriber,
+	subscriber mq.Subscriber,
 	timeoutPerProcess time.Duration,
 ) *InboxWorker {
 	return &InboxWorker{
@@ -38,7 +29,7 @@ func NewInboxWorker(
 }
 
 func (i *InboxWorker) Run() error {
-	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *model.Message, msgResponder MessageResponder) {
+	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *model.Message, msgResponder mq.MessageResponder) {
 		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
 		defer cancel()
 

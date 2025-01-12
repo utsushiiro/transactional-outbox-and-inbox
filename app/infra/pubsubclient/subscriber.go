@@ -1,4 +1,4 @@
-package msgclient
+package pubsubclient
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
 type subscriber struct {
@@ -16,7 +16,7 @@ type subscriber struct {
 	subscription *pubsub.Subscription
 }
 
-var _ message.Subscriber = (*subscriber)(nil)
+var _ mq.Subscriber = (*subscriber)(nil)
 
 func NewSubscriber(
 	ctx context.Context,
@@ -34,7 +34,7 @@ func NewSubscriber(
 	}, nil
 }
 
-func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *model.Message, message.MessageResponder)) error {
+func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *model.Message, mq.MessageResponder)) error {
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
 		msgID, err := uuid.Parse(pubsubMsg.Attributes["MessageID"])
 		if err != nil {

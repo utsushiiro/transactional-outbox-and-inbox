@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/message"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/msgclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/pubsubclient"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/recovery"
 )
 
@@ -23,28 +23,28 @@ func run() {
 		log.Fatalf("failed to messagedb.NewDB: %v", err)
 	}
 
-	client, err := msgclient.NewPublisher(mainCtx, "my-project", "my-topic")
+	client, err := pubsubclient.NewPublisher(mainCtx, "my-project", "my-topic")
 	if err != nil {
-		log.Fatalf("failed to msgclient.NewPublisher: %v", err)
+		log.Fatalf("failed to pubsubclient.NewPublisher: %v", err)
 	}
 
-	batchClient, err := msgclient.NewPooledBatchPublisher(mainCtx, "my-project", "my-topic", 10)
+	batchClient, err := pubsubclient.NewPooledBatchPublisher(mainCtx, "my-project", "my-topic", 10)
 	if err != nil {
-		log.Fatalf("failed to msgclient.NewPooledBatchPublisher: %v", err)
+		log.Fatalf("failed to pubsubclient.NewPooledBatchPublisher: %v", err)
 	}
 
 	outboxWorkerPoolingInterval := 1 * time.Second
 	outboxWorkerTimeoutPerProcess := 1 * time.Second
-	outboxWorker := message.NewOutboxWorker(messageDB, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
+	outboxWorker := worker.NewOutboxWorker(messageDB, client, outboxWorkerPoolingInterval, outboxWorkerTimeoutPerProcess)
 	recovery.Go(outboxWorker.Run)
 
 	batchOutboxWorkerPoolingInterval := 1 * time.Second
 	batchOutboxWorkerTimeoutPerProcess := 1 * time.Second
-	batchOutboxWorker := message.NewBatchOutboxWorker(messageDB, batchClient, batchOutboxWorkerPoolingInterval, batchOutboxWorkerTimeoutPerProcess, 10)
+	batchOutboxWorker := worker.NewBatchOutboxWorker(messageDB, batchClient, batchOutboxWorkerPoolingInterval, batchOutboxWorkerTimeoutPerProcess, 10)
 	recovery.Go(batchOutboxWorker.Run)
 
 	produceWorkerTimeoutPerProcess := 1 * time.Second
-	produceWorker := message.NewProduceWorker(messageDB, produceWorkerTimeoutPerProcess)
+	produceWorker := worker.NewProduceWorker(messageDB, produceWorkerTimeoutPerProcess)
 	recovery.Go(produceWorker.Run)
 
 	ctx, cancel := signal.NotifyContext(mainCtx, os.Interrupt, syscall.SIGTERM)

@@ -1,4 +1,4 @@
-package message
+package worker
 
 import (
 	"context"
@@ -6,34 +6,23 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/messagedb"
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/model"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type BatchOutboxWorker struct {
 	db                *messagedb.DB
-	publisher         BatchPublisher
+	publisher         mq.BatchPublisher
 	pollingInterval   time.Duration
 	timeoutPerProcess time.Duration
 	batchSize         int
 	ticker            *timeutils.Ticker
 }
 
-type BatchPublisher interface {
-	BatchPublish(ctx context.Context, msgs []*model.Message) (*BatchResult, error)
-	Close() error
-}
-
-type BatchResult struct {
-	SucceededIDs []uuid.UUID
-	FailedIDs    []uuid.UUID
-}
-
 func NewBatchOutboxWorker(
 	db *messagedb.DB,
-	publisher BatchPublisher,
+	publisher mq.BatchPublisher,
 	poolingInterval time.Duration,
 	timeoutPerProcess time.Duration,
 	batchSize int,
