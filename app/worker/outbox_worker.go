@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -60,10 +61,13 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 	ctx, cancel := context.WithTimeout(ctx, p.timeoutPerProcess)
 	defer cancel()
 
-	var isSent bool
 	err := p.db.RunInTx(ctx, func(ctx context.Context) error {
 		unsentMsg, err := p.db.OutboxMessages.SelectUnsentOneWithLock(ctx)
 		if err != nil {
+			if errors.Is(err, messagedb.ErrResourceNotFound) {
+				log.Panicf("no unsent messages")
+				return nil
+			}
 			return err
 		}
 
@@ -83,19 +87,13 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 			return err
 		}
 
-		isSent = true
-
 		return nil
 	})
 	if err != nil {
 		return err
 	}
 
-	if isSent {
-		log.Printf("published an unsent messages")
-	} else {
-		log.Printf("no unsent messages")
-	}
+	log.Printf("published an unsent messages")
 
 	return nil
 }

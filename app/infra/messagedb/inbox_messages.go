@@ -29,7 +29,7 @@ func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*mode
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, ErrResourceNotFound
+			return nil, messagedb.ErrResourceNotFound
 		}
 		return nil, err
 	}

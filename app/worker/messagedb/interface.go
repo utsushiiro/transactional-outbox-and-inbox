@@ -2,11 +2,14 @@ package messagedb
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 )
+
+var ErrResourceNotFound = errors.New("resource not found")
 
 type Transactor interface {
 	RunInTx(ctx context.Context, fn func(context.Context) error) error

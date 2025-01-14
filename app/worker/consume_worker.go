@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -64,7 +63,8 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 	err := c.db.RunInTx(ctx, func(ctx context.Context) error {
 		unprocessedMessage, err := c.db.inboxMessages.SelectUnprocessedOneWithLock(ctx)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
+			if errors.Is(err, messagedb.ErrResourceNotFound) {
+				log.Printf("no unprocessed message")
 				return nil
 			}
 

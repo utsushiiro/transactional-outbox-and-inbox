@@ -33,7 +33,7 @@ func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.Ou
 	raw, err := q.SelectUnsentOutboxMessage(ctx)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, ErrResourceNotFound
+			return nil, messagedb.ErrResourceNotFound
 		}
 		return nil, err
 	}
@@ -54,9 +54,6 @@ func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int)
 
 	raws, err := q.SelectUnsentOutboxMessages(ctx, int32(size))
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, ErrResourceNotFound
-		}
 		return nil, err
 	}
 

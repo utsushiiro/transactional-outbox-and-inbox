@@ -14,8 +14,6 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
-var ErrResourceNotFound = errors.New("resource not found")
-
 func NewDB(
 	ctx context.Context,
 	userName string,
