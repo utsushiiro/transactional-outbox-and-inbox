@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	BulkUpdateOutboxMessagesAsSent(ctx context.Context, arg BulkUpdateOutboxMessagesAsSentParams) error
 	InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) error
 	InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) error
 	SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessage, error)

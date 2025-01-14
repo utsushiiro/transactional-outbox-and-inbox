@@ -27,6 +27,11 @@ UPDATE outbox_messages
 SET message_payload = $2, sent_at = $3
 WHERE message_uuid = $1;
 
+-- name: BulkUpdateOutboxMessagesAsSent :exec
+UPDATE outbox_messages
+SET sent_at = $1
+WHERE message_uuid = ANY(@message_uuids::uuid[]);
+
 /**
  * inbox_messages table
  */

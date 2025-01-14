@@ -12,6 +12,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const bulkUpdateOutboxMessagesAsSent = `-- name: BulkUpdateOutboxMessagesAsSent :exec
+UPDATE outbox_messages
+SET sent_at = $1
+WHERE message_uuid = ANY($2::uuid[])
+`
+
+type BulkUpdateOutboxMessagesAsSentParams struct {
+	SentAt       *time.Time
+	MessageUuids []uuid.UUID
+}
+
+func (q *Queries) BulkUpdateOutboxMessagesAsSent(ctx context.Context, arg BulkUpdateOutboxMessagesAsSentParams) error {
+	_, err := q.db.Exec(ctx, bulkUpdateOutboxMessagesAsSent, arg.SentAt, arg.MessageUuids)
+	return err
+}
+
 const insertInboxMessage = `-- name: InsertInboxMessage :exec
 INSERT INTO inbox_messages (message_uuid, message_payload, received_at, processed_at)
 VALUES ($1, $2, $3, $4)

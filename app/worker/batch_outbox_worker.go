@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"errors"
 	"log"
 	"time"
 
@@ -87,18 +86,10 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 		publishedOutboxMessages := unsentOutboxMessages.Filter(result.FailedIDs)
 		publishedCount = len(publishedOutboxMessages)
 
-		var errs error
-		for _, publishedOutboxMessage := range publishedOutboxMessages {
-			publishedOutboxMessage.MarkAsSent()
-
-			// TODO: use bulk update
-			err = p.db.outboxMessages.Update(ctx, publishedOutboxMessage)
-			if err != nil {
-				errs = errors.Join(errs, err)
-			}
-		}
-		if errs != nil {
-			return errs
+		sentAt := time.Now()
+		err = p.db.outboxMessages.BulkUpdateAsSent(ctx, publishedOutboxMessages.IDs(), sentAt)
+		if err != nil {
+			return err
 		}
 
 		return nil

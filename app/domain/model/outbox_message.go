@@ -41,3 +41,12 @@ func (ms OutboxMessages) Filter(excludeIDs []uuid.UUID) OutboxMessages {
 
 	return filteredMessages
 }
+
+func (ms OutboxMessages) IDs() []uuid.UUID {
+	ids := make([]uuid.UUID, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+
+	return ids
+}

@@ -2,7 +2,9 @@ package messagedb
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 )
 
@@ -15,6 +17,7 @@ type OutboxMessages interface {
 	SelectUnsentManyWithLock(ctx context.Context, size int) (model.OutboxMessages, error)
 	Insert(ctx context.Context, outboxMessage *model.OutboxMessage) error
 	Update(ctx context.Context, outboxMessage *model.OutboxMessage) error
+	BulkUpdateAsSent(ctx context.Context, outboxMessageIDs []uuid.UUID, sentAt time.Time) error
 }
 
 type InboxMessages interface {

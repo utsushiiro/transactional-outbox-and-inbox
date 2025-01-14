@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
@@ -92,6 +94,20 @@ func (o *OutboxMessages) Update(ctx context.Context, outboxMessage *model.Outbox
 		MessageUuid:    outboxMessage.ID,
 		MessagePayload: outboxMessage.Payload,
 		SentAt:         outboxMessage.SentAt,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *OutboxMessages) BulkUpdateAsSent(ctx context.Context, outboxMessageIDs []uuid.UUID, sentAt time.Time) error {
+	q := o.db.getQuerier(ctx)
+
+	err := q.BulkUpdateOutboxMessagesAsSent(ctx, sqlc.BulkUpdateOutboxMessagesAsSentParams{
+		MessageUuids: outboxMessageIDs,
+		SentAt:       &sentAt,
 	})
 	if err != nil {
 		return err
