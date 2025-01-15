@@ -3,7 +3,7 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries: "./app/infra/messagedb/sqlc/query.sql"
-    schema: "./middlewares/postgres/initdb.d/02-schema.sql"
+    schema: "./middlewares/postgres/initdb.d/03-schema.sql"
     gen:
       go:
         package: "sqlc"
