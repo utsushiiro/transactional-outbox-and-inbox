@@ -39,6 +39,7 @@ func NewConsumeWorker(
 		pollingInterval:   pollingInterval,
 		timeoutPerProcess: timeoutPerProcess,
 		sleeper:           timeutils.NewRandomSleeper(50*time.Millisecond, 200*time.Millisecond),
+		ticker:            nil,
 	}
 }
 

@@ -19,7 +19,7 @@ type OutboxMessages struct {
 	db *DB
 }
 
-var _ messagedb.OutboxMessages = &OutboxMessages{}
+var _ messagedb.OutboxMessages = (*OutboxMessages)(nil)
 
 func NewOutboxMessages(
 	db *DB,

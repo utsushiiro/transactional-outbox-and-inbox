@@ -15,9 +15,10 @@ type InboxMessage struct {
 
 func NewInboxMessage(id uuid.UUID, payload []byte) *InboxMessage {
 	return &InboxMessage{
-		ID:         id,
-		Payload:    payload,
-		ReceivedAt: time.Now(),
+		ID:          id,
+		Payload:     payload,
+		ReceivedAt:  time.Now(),
+		ProcessedAt: nil,
 	}
 }
 

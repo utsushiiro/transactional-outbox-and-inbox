@@ -33,6 +33,7 @@ func NewProduceWorker(
 			outboxMessages: outboxMessages,
 		},
 		timeoutPerProcess: timeoutPerProcess,
+		ticker:            nil,
 	}
 }
 

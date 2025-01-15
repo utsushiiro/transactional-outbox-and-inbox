@@ -42,6 +42,7 @@ func NewBatchOutboxWorker(
 		pollingInterval:   poolingInterval,
 		timeoutPerProcess: timeoutPerProcess,
 		batchSize:         batchSize,
+		ticker:            nil,
 	}
 }
 

@@ -16,6 +16,7 @@ func NewOutboxMessage(payload []byte) *OutboxMessage {
 	return &OutboxMessage{
 		ID:      uuid.New(),
 		Payload: payload,
+		SentAt:  nil,
 	}
 }
 

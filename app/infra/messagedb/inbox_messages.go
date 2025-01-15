@@ -15,7 +15,7 @@ type InboxMessages struct {
 	db *DB
 }
 
-var _ messagedb.InboxMessages = &InboxMessages{}
+var _ messagedb.InboxMessages = (*InboxMessages)(nil)
 
 func NewInboxMessages(
 	db *DB,

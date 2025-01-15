@@ -39,6 +39,7 @@ func NewOutboxWorker(
 		publisher:         publisher,
 		pollingInterval:   poolingInterval,
 		timeoutPerProcess: timeoutPerProcess,
+		ticker:            nil,
 	}
 }
 

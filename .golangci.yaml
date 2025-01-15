@@ -4,6 +4,9 @@ run:
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
+  exhaustruct:
+    include:
+      - 'github.com/utsushiiro/transactional-outbox-and-inbox/.*'
   gci:
     sections:
       - standard
@@ -59,6 +62,7 @@ linters:
     - asciicheck
     - errorlint
     - exhaustive
+    - exhaustruct
     - forbidigo
     - forcetypeassert
     - gci
