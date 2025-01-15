@@ -38,8 +38,10 @@ func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*mode
 	}
 
 	return &model.InboxMessage{
-		ID:      raw.MessageUuid,
-		Payload: raw.MessagePayload,
+		ID:          raw.MessageUuid,
+		Payload:     raw.MessagePayload,
+		ReceivedAt:  raw.ReceivedAt,
+		ProcessedAt: raw.ProcessedAt,
 	}, nil
 }
 
