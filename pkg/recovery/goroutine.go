@@ -23,7 +23,7 @@ func Go(fn func() error) {
 }
 
 var errorHandler func(error) = func(err error) {
-	log.Printf("err: %v", err)
+	log.Printf("err: %+v", err)
 }
 var errorHandlerOpsLock = sync.Mutex{}
 
@@ -36,11 +36,15 @@ func SetErrorHandler(fn func(error)) {
 }
 
 type PanicError struct {
-	r any
+	r          any
+	stackTrace string
 }
 
 func newPanicError(r any) PanicError {
-	return PanicError{r: r}
+	return PanicError{
+		r:          r,
+		stackTrace: GetStackTrace(),
+	}
 }
 
 func (p PanicError) Unwrap() error {
@@ -55,5 +59,35 @@ func (p PanicError) Error() string {
 		return "panic: " + err.Error()
 	} else {
 		return "panic: " + fmt.Sprintf("%v", p.r)
+	}
+}
+
+func (p PanicError) StackTrace() string {
+	return p.stackTrace
+}
+
+func (p PanicError) GoString() string {
+	return fmt.Sprintf("PanicError{r: %#v, stackTrace: %q}", p.r, p.stackTrace)
+}
+
+func (p PanicError) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		switch {
+		case s.Flag('+'):
+			// Include the stack trace for %+v
+			fmt.Fprintf(s, "%s\n\n%s", p.Error(), p.stackTrace)
+		case s.Flag('#'):
+			// Go-syntax representation(GoString)
+			fmt.Fprint(s, p.GoString())
+		default:
+			fmt.Fprint(s, p.Error())
+		}
+	case 's':
+		// Default string representation
+		fmt.Fprint(s, p.Error())
+	case 'q':
+		// Quoted string representation
+		fmt.Fprintf(s, "%q", p.Error())
 	}
 }
