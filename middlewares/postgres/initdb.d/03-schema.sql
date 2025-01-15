@@ -27,6 +27,6 @@ CREATE INDEX IF NOT EXISTS inbox_messages_unprocessed_created_at ON inbox_messag
 CREATE INDEX IF NOT EXISTS inbox_messages_processed_created_at ON inbox_messages (created_at) WHERE processed_at IS NOT NULL;
 
 CREATE TRIGGER auto_set_inbox_messages_created_at_and_updated_at
-    BEFORE UPDATE ON inbox_messages
+    BEFORE INSERT OR UPDATE ON inbox_messages
     FOR EACH ROW
     EXECUTE FUNCTION auto_set_created_at_and_updated_at();
