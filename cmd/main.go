@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/cmd/consumer"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/cmd/producer"
 )
@@ -15,7 +16,7 @@ func main() {
 }
 
 func newCmdRoot() *cobra.Command {
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "server",
 		Short: "producer/consumer server",
 	}

@@ -1,0 +1,74 @@
+run:
+  timeout: 5m
+
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true
+  gci:
+    sections:
+      - standard
+      - default 
+      - prefix(github.com/utsushiiro/transactional-outbox-and-inbox)
+  forbidigo:
+    forbid:
+      - 'fmt\.Print.*'
+  gofumpt:
+    extra-rules: false
+  revive:
+    rules:
+      # Based on the recommended configuration with adjustments for project needs.
+      # See: https://github.com/mgechev/revive#recommended-configuration
+      - name: context-as-argument
+        disabled: false
+      - name: context-keys-type
+        disabled: false
+      - name: error-naming
+        disabled: false
+      - name: error-return
+        disabled: false
+      - name: error-strings
+        disabled: false
+      - name: if-return
+        disabled: false
+      - name: indent-error-flow
+        disabled: false
+      - name: receiver-naming
+        disabled: false
+      - name: redefines-builtin-id
+        disabled: false
+      - name: superfluous-else
+        disabled: false
+      - name: time-equal
+        disabled: false
+      - name: time-naming
+        disabled: false
+      - name: unused-parameter
+        disabled: false
+      - name: var-declaration
+        disabled: false
+
+linters:
+  disable-all: true
+  # https://golangci-lint.run/usage/linters/
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - unused
+    - asciicheck
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - forcetypeassert
+    - gci
+    - gofumpt
+    - gosec
+    - nilerr
+    - nlreturn
+    - predeclared
+    - recvcheck
+    - revive
+    - unconvert
+    - unparam
+    - whitespace

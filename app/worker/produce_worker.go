@@ -70,7 +70,8 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 
 		outboxMessage := model.NewOutboxMessage(data)
 
-		if err := p.db.outboxMessages.Insert(ctx, outboxMessage); err != nil {
+		err = p.db.outboxMessages.Insert(ctx, outboxMessage)
+		if err != nil {
 			return err
 		}
 

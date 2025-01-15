@@ -5,10 +5,10 @@ import (
 )
 
 func NewCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "producer",
 		Short: "run producer server",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			run()
 		},
 	}

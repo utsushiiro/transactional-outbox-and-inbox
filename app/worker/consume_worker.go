@@ -65,6 +65,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 		if err != nil {
 			if errors.Is(err, messagedb.ErrResourceNotFound) {
 				log.Printf("no unprocessed message")
+
 				return nil
 			}
 

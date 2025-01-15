@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 
@@ -39,6 +40,7 @@ func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, 
 		if err != nil {
 			log.Printf("failed to uuid.Parse: %v", err)
 			pubsubMsg.Ack()
+
 			return
 		}
 

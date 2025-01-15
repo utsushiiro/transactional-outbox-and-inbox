@@ -29,7 +29,7 @@ func (i *InboxMessage) MarkAsProcessed() {
 type InboxMessages []*InboxMessage
 
 func (ms InboxMessages) Filter(excludeIDs []uuid.UUID) InboxMessages {
-	var excludeIDMap = make(map[uuid.UUID]struct{}, len(excludeIDs))
+	excludeIDMap := make(map[uuid.UUID]struct{}, len(excludeIDs))
 	for _, id := range excludeIDs {
 		excludeIDMap[id] = struct{}{}
 	}

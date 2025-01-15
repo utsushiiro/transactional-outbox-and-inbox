@@ -24,6 +24,7 @@ func NewTicker(d time.Duration) *Ticker {
 				t.c <- v
 			case <-t.stop:
 				close(t.c)
+
 				return
 			}
 		}

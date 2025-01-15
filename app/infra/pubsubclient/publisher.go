@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 

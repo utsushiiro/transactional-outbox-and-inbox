@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/gammazero/workerpool"
 	"github.com/google/uuid"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
 

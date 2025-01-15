@@ -2,8 +2,10 @@ package messagedb
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
@@ -28,9 +30,10 @@ func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*mode
 
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, messagedb.ErrResourceNotFound
 		}
+
 		return nil, err
 	}
 

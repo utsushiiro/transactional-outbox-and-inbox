@@ -6,16 +6,17 @@ import (
 )
 
 type RandomSleeper struct {
-	randSrc *rand.Rand
-	min     time.Duration
-	max     time.Duration
+	randSrc     *rand.Rand
+	minInterval time.Duration
+	maxInterval time.Duration
 }
 
-func NewRandomSleeper(min time.Duration, max time.Duration) *RandomSleeper {
+func NewRandomSleeper(minInterval time.Duration, maxInterval time.Duration) *RandomSleeper {
 	return &RandomSleeper{
-		randSrc: rand.New(rand.NewSource(time.Now().UnixNano())),
-		min:     min,
-		max:     max,
+		//nolint:gosec // We don't need a cryptographically secure random number generator here
+		randSrc:     rand.New(rand.NewSource(time.Now().UnixNano())),
+		minInterval: minInterval,
+		maxInterval: maxInterval,
 	}
 }
 
@@ -24,6 +25,7 @@ func (rs *RandomSleeper) Sleep() {
 }
 
 func (rs *RandomSleeper) nextInterval() time.Duration {
-	interval := rs.randSrc.Int63n(int64(rs.max-rs.min)) + int64(rs.min)
+	interval := rs.randSrc.Int63n(int64(rs.maxInterval-rs.minInterval)) + int64(rs.minInterval)
+
 	return time.Duration(interval)
 }

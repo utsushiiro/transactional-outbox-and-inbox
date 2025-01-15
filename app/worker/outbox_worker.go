@@ -66,8 +66,10 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		if err != nil {
 			if errors.Is(err, messagedb.ErrResourceNotFound) {
 				log.Panicf("no unsent messages")
+
 				return nil
 			}
+
 			return err
 		}
 

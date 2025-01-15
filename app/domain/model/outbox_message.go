@@ -27,7 +27,7 @@ func (m *OutboxMessage) MarkAsSent() {
 type OutboxMessages []*OutboxMessage
 
 func (ms OutboxMessages) Filter(excludeIDs []uuid.UUID) OutboxMessages {
-	var excludeIDMap = make(map[uuid.UUID]struct{}, len(excludeIDs))
+	excludeIDMap := make(map[uuid.UUID]struct{}, len(excludeIDs))
 	for _, id := range excludeIDs {
 		excludeIDMap[id] = struct{}{}
 	}

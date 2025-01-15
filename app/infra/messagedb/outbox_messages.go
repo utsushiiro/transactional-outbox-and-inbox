@@ -2,12 +2,14 @@ package messagedb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
@@ -32,9 +34,10 @@ func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.Ou
 
 	raw, err := q.SelectUnsentOutboxMessage(ctx)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, messagedb.ErrResourceNotFound
 		}
+
 		return nil, err
 	}
 
@@ -52,6 +55,7 @@ func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int)
 		return nil, fmt.Errorf("size must be less than %d", math.MaxInt32)
 	}
 
+	//nolint:gosec // size is validated above
 	raws, err := q.SelectUnsentOutboxMessages(ctx, int32(size))
 	if err != nil {
 		return nil, err

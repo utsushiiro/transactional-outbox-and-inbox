@@ -55,6 +55,7 @@ func (i *InboxWorker) Run() error {
 		if err != nil {
 			log.Printf("failed to insert inbox message: %v", err)
 			msgResponder.Nack()
+
 			return
 		}
 
