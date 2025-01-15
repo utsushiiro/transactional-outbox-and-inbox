@@ -15,6 +15,7 @@ linters-settings:
   forbidigo:
     forbid:
       - 'fmt\.Print.*'
+      - 'time\.Now()'
   gofumpt:
     extra-rules: false
   revive:

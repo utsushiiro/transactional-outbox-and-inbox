@@ -18,11 +18,22 @@ sql:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.NullUUID"
             nullable: true
+          # timestamp needs pg_catalog, but timestamptz doesn't
           - db_type: pg_catalog.timestamp
             go_type:
               import: time
               type: Time
           - db_type: pg_catalog.timestamp
+            go_type:
+              import: time
+              type: Time
+              pointer: true
+            nullable: true
+          - db_type: timestamptz
+            go_type:
+              import: time
+              type: Time
+          - db_type: timestamptz
             go_type:
               import: time
               type: Time

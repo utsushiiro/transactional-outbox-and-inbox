@@ -23,7 +23,7 @@ func NewRandomTicker(minInterval time.Duration, maxInterval time.Duration) (*Ran
 		stop: make(chan struct{}),
 		c:    make(chan time.Time),
 		//nolint:gosec // We don't need a cryptographically secure random number generator here
-		randSrc:     rand.New(rand.NewSource(time.Now().UnixNano())),
+		randSrc:     rand.New(rand.NewSource(NowUTC().UnixNano())),
 		minInterval: minInterval,
 		maxInterval: maxInterval,
 	}

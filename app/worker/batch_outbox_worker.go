@@ -88,7 +88,7 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 		publishedOutboxMessages := unsentOutboxMessages.Filter(result.FailedIDs)
 		publishedCount = len(publishedOutboxMessages)
 
-		sentAt := time.Now()
+		sentAt := timeutils.NowUTC()
 		err = p.db.outboxMessages.BulkUpdateAsSent(ctx, publishedOutboxMessages.IDs(), sentAt)
 		if err != nil {
 			return err

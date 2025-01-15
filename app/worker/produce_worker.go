@@ -64,7 +64,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 		// Perform some tasks here in the same transaction with inserting outbox message.
 
 		// In a real-world scenario, this data would be related to the task.
-		data, err := json.Marshal("Hello, World! at " + time.Now().Format(time.RFC3339))
+		data, err := json.Marshal("Hello, World! at " + timeutils.NowUTC().In(time.Local).Format(time.RFC3339))
 		if err != nil {
 			return err
 		}
