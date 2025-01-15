@@ -2,6 +2,7 @@ package pubsubclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -34,7 +35,7 @@ func NewSubscriber(
 	}, nil
 }
 
-func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *mq.Message, mq.MessageResponder)) error {
+func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *mq.Message) error) error {
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
 		msgID, err := uuid.Parse(pubsubMsg.Attributes["MessageID"])
 		if err != nil {
@@ -48,7 +49,20 @@ func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, 
 			ID:      msgID,
 			Payload: pubsubMsg.Data,
 		}
-		handler(ctx, msg, pubsubMsg)
+
+		err = handler(ctx, msg)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to handler", slog.String("error", err.Error()))
+
+			var ackableErr *mq.AckableError
+			if !errors.As(err, &ackableErr) {
+				pubsubMsg.Nack()
+
+				return
+			}
+		}
+
+		pubsubMsg.Ack()
 	})
 	if err != nil {
 		return fmt.Errorf("failed to subscription.Receive: %w", err)

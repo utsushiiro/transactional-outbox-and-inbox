@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
@@ -38,7 +37,7 @@ func NewInboxWorker(
 }
 
 func (i *InboxWorker) Run() error {
-	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *mq.Message, msgResponder mq.MessageResponder) {
+	err := i.subscriber.Receive(context.Background(), func(ctx context.Context, msg *mq.Message) error {
 		ctx, cancel := context.WithTimeout(ctx, i.timeoutPerProcess)
 		defer cancel()
 
@@ -53,13 +52,10 @@ func (i *InboxWorker) Run() error {
 			return nil
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to insert inbox message", slog.String("error", err.Error()))
-			msgResponder.Nack()
-
-			return
+			return err
 		}
 
-		msgResponder.Ack()
+		return nil
 	})
 
 	return err
