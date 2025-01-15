@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
@@ -53,7 +53,7 @@ func (i *InboxWorker) Run() error {
 			return nil
 		})
 		if err != nil {
-			log.Printf("failed to insert inbox message: %v", err)
+			slog.ErrorContext(ctx, "failed to insert inbox message", slog.String("error", err.Error()))
 			msgResponder.Nack()
 
 			return

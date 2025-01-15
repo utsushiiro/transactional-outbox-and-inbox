@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
@@ -49,7 +50,7 @@ func (c *ConsumeWorker) Run() error {
 	for range ticker.C() {
 		err := c.consumeMessage(ctx)
 		if err != nil {
-			log.Printf("failed to consumeMessage: %v", err)
+			slog.ErrorContext(ctx, "failed to consumeMessage", slog.String("error", err.Error()))
 		}
 	}
 
@@ -64,7 +65,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 		unprocessedMessage, err := c.db.inboxMessages.SelectUnprocessedOneWithLock(ctx)
 		if err != nil {
 			if errors.Is(err, messagedb.ErrResourceNotFound) {
-				log.Printf("no unprocessed message")
+				slog.InfoContext(ctx, "no unprocessed message")
 
 				return nil
 			}
@@ -79,7 +80,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 			return err
 		}
 		c.sleeper.Sleep() // Simulate task processing time.
-		log.Printf("processed message: %v", msg)
+		slog.InfoContext(ctx, fmt.Sprintf("processed message: %v", msg))
 
 		// After processing, mark the message as processed.
 		unprocessedMessage.MarkAsProcessed()

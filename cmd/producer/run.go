@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,19 +21,22 @@ func run() {
 
 	messageDB, err := messagedb.NewDB(mainCtx, "postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
 	if err != nil {
-		log.Fatalf("failed to messagedb.NewDB: %v", err)
+		slog.ErrorContext(mainCtx, "failed to messagedb.NewDB", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	outboxMessages := messagedb.NewOutboxMessages(messageDB)
 
 	client, err := pubsubclient.NewPublisher(mainCtx, "my-project", "my-topic")
 	if err != nil {
-		log.Fatalf("failed to pubsubclient.NewPublisher: %v", err)
+		slog.ErrorContext(mainCtx, "failed to pubsubclient.NewPublisher", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	batchClient, err := pubsubclient.NewPooledBatchPublisher(mainCtx, "my-project", "my-topic", 10)
 	if err != nil {
-		log.Fatalf("failed to pubsubclient.NewPooledBatchPublisher: %v", err)
+		slog.ErrorContext(mainCtx, "failed to pubsubclient.NewPooledBatchPublisher", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	outboxWorkerPoolingInterval := 1 * time.Second

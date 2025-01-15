@@ -2,7 +2,8 @@ package worker
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
@@ -52,7 +53,7 @@ func (p *BatchOutboxWorker) Run() error {
 	for range ticker.C() {
 		err := p.publishUnsentMessagesInOutbox(ctx)
 		if err != nil {
-			log.Printf("failed to publish unsent messages: %v", err)
+			slog.ErrorContext(ctx, "failed to publish unsent messages", slog.String("error", err.Error()))
 		}
 	}
 
@@ -99,9 +100,9 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 	}
 
 	if publishedCount > 0 {
-		log.Printf("published %d unsent messages", publishedCount)
+		slog.InfoContext(ctx, fmt.Sprintf("published %d unsent messages", publishedCount))
 	} else {
-		log.Printf("no unsent messages")
+		slog.InfoContext(ctx, "no unsent messages")
 	}
 
 	return nil

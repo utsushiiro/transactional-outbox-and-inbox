@@ -2,7 +2,7 @@ package consumer
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,14 +20,16 @@ func run() {
 
 	messageDB, err := messagedb.NewDB(mainCtx, "postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
 	if err != nil {
-		log.Fatalf("failed to messagedb.NewDB: %v", err)
+		slog.ErrorContext(mainCtx, "failed to messagedb.NewDB", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	inboxMessages := messagedb.NewInboxMessages(messageDB)
 
 	client, err := pubsubclient.NewSubscriber(mainCtx, "my-project", "my-subscription")
 	if err != nil {
-		log.Fatalf("failed to pubsubclient.NewSubscriber: %v", err)
+		slog.ErrorContext(mainCtx, "failed to pubsubclient.NewSubscriber", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	inboxWorkerTimeoutPerProcess := 1 * time.Second
@@ -49,5 +51,5 @@ func run() {
 	gracefulPeriod := max(inboxWorkerTimeoutPerProcess, consumeWorkerTimeoutPerProcess) + 1*time.Second
 	time.Sleep(gracefulPeriod)
 
-	log.Println("consumer stopped")
+	slog.InfoContext(ctx, "consumer stopped")
 }

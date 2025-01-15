@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
@@ -48,7 +48,7 @@ func (p *ProduceWorker) Run() error {
 	for range ticker.C() {
 		err := p.produceMessage(ctx)
 		if err != nil {
-			log.Printf("failed to produceMessage: %v", err)
+			slog.ErrorContext(ctx, "failed to produceMessage", slog.String("error", err.Error()))
 		}
 	}
 

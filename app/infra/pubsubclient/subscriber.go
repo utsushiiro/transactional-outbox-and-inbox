@@ -3,7 +3,7 @@ package pubsubclient
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
@@ -38,7 +38,7 @@ func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, 
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
 		msgID, err := uuid.Parse(pubsubMsg.Attributes["MessageID"])
 		if err != nil {
-			log.Printf("failed to uuid.Parse: %v", err)
+			slog.WarnContext(ctx, "failed to uuid.Parse", slog.String("error", err.Error()))
 			pubsubMsg.Ack()
 
 			return

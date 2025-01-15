@@ -2,7 +2,7 @@ package recovery
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 )
 
@@ -23,7 +23,7 @@ func Go(fn func() error) {
 }
 
 var errorHandler = func(err error) {
-	log.Printf("err: %+v", err)
+	slog.Error(fmt.Sprintf("err: %+v", err))
 }
 var errorHandlerOpsLock = sync.Mutex{}
 

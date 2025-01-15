@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
@@ -50,7 +50,7 @@ func (p *OutboxWorker) Run() error {
 	for range ticker.C() {
 		err := p.publishUnsentMessagesInOutbox(ctx)
 		if err != nil {
-			log.Printf("failed to publish unsent messages: %v", err)
+			slog.ErrorContext(ctx, "failed to publish unsent messages", slog.String("error", err.Error()))
 		}
 	}
 
@@ -65,7 +65,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		unsentMsg, err := p.db.OutboxMessages.SelectUnsentOneWithLock(ctx)
 		if err != nil {
 			if errors.Is(err, messagedb.ErrResourceNotFound) {
-				log.Panicf("no unsent messages")
+				slog.InfoContext(ctx, "no unsent messages")
 
 				return nil
 			}
@@ -95,7 +95,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		return err
 	}
 
-	log.Printf("published an unsent messages")
+	slog.InfoContext(ctx, "published an unsent messages")
 
 	return nil
 }
