@@ -12,11 +12,26 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/pubsubclient"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/recovery"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 func run() {
 	mainCtx := context.Background()
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:5002")
+
+	cleanup, err := telemetry.Setup(mainCtx, &telemetry.TelemetryConfig{
+		ServiceName:        "github.com/utsushiiro/transactional-outbox-and-inbox/cmd/consumer",
+		TracerAndMeterName: "consumer",
+	})
+	if err != nil {
+		slog.ErrorContext(mainCtx, "failed to telemetry.Setup", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer func() {
+		if err := cleanup(mainCtx); err != nil {
+			slog.ErrorContext(mainCtx, "failed to cleanup", slog.String("error", err.Error()))
+		}
+	}()
 
 	messageDB, err := messagedb.NewDB(mainCtx, "postgres", "postgres", "localhost:5001", "transactional_outbox_and_inbox_example")
 	if err != nil {
