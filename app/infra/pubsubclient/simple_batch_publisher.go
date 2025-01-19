@@ -8,8 +8,11 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 type simpleBatchPublisher struct {
@@ -34,6 +37,9 @@ func NewSimpleBatchPublisher(ctx context.Context, projectID string, topic string
 }
 
 func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*mq.Message) (*mq.BatchResult, error) {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	// The `errs` slice are shared across multiple goroutines,
 	// but there is no race condition since each goroutine exclusively accesses its own index.
 	errs := make([]error, len(messages))
@@ -48,6 +54,9 @@ func (p *simpleBatchPublisher) BatchPublish(ctx context.Context, messages []*mq.
 			},
 			Data: msg.Payload,
 		}
+
+		// Inject otel context to message attributes.
+		otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(pubsubMsg.Attributes))
 
 		wg.Add(1)
 		limits <- struct{}{}

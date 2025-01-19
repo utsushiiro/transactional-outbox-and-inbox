@@ -13,6 +13,7 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 type OutboxMessages struct {
@@ -30,6 +31,9 @@ func NewOutboxMessages(
 }
 
 func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.OutboxMessage, error) {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := o.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnsentOutboxMessage(ctx)
@@ -49,6 +53,9 @@ func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.Ou
 }
 
 func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int) (model.OutboxMessages, error) {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := o.db.getQuerier(ctx)
 
 	if size > math.MaxInt32 {
@@ -74,6 +81,9 @@ func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int)
 }
 
 func (o *OutboxMessages) Insert(ctx context.Context, outboxMessage *model.OutboxMessage) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := o.db.getQuerier(ctx)
 
 	err := q.InsertOutboxMessage(ctx, sqlc.InsertOutboxMessageParams{
@@ -89,6 +99,9 @@ func (o *OutboxMessages) Insert(ctx context.Context, outboxMessage *model.Outbox
 }
 
 func (o *OutboxMessages) Update(ctx context.Context, outboxMessage *model.OutboxMessage) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := o.db.getQuerier(ctx)
 
 	err := q.UpdateOutboxMessage(ctx, sqlc.UpdateOutboxMessageParams{
@@ -104,6 +117,9 @@ func (o *OutboxMessages) Update(ctx context.Context, outboxMessage *model.Outbox
 }
 
 func (o *OutboxMessages) BulkUpdateAsSent(ctx context.Context, outboxMessageIDs []uuid.UUID, sentAt time.Time) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := o.db.getQuerier(ctx)
 
 	err := q.BulkUpdateOutboxMessagesAsSent(ctx, sqlc.BulkUpdateOutboxMessagesAsSentParams{

@@ -8,6 +8,7 @@ import (
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
@@ -52,10 +53,15 @@ func (p *BatchOutboxWorker) Run() error {
 	p.ticker = ticker
 
 	for range ticker.C() {
+		// Start root span for each iteration.
+		ctx, span := telemetry.Tracer.Start(ctx, "BatchOutboxWorker.Run")
+
 		err := p.publishUnsentMessagesInOutbox(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to publish unsent messages", slog.String("error", err.Error()))
 		}
+
+		span.End()
 	}
 
 	return nil

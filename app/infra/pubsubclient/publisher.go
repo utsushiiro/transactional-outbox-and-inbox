@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 type publisher struct {
@@ -29,11 +32,19 @@ func NewPublisher(ctx context.Context, projectID string, topic string) (*publish
 }
 
 func (p *publisher) Publish(ctx context.Context, message *mq.Message) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
+	attributes := map[string]string{
+		"MessageID": message.ID.String(),
+	}
+
+	// Inject otel context to message attributes.
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(attributes))
+
 	result := p.topic.Publish(ctx, &pubsub.Message{
-		Attributes: map[string]string{
-			"MessageID": message.ID.String(),
-		},
-		Data: message.Payload,
+		Attributes: attributes,
+		Data:       message.Payload,
 	})
 
 	_, err := result.Get(ctx)

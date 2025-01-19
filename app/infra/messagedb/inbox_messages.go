@@ -9,6 +9,7 @@ import (
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 type InboxMessages struct {
@@ -26,6 +27,9 @@ func NewInboxMessages(
 }
 
 func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*model.InboxMessage, error) {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := i.db.getQuerier(ctx)
 
 	raw, err := q.SelectUnprocessedInboxMessage(ctx)
@@ -46,6 +50,9 @@ func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*mode
 }
 
 func (i *InboxMessages) Insert(ctx context.Context, inboxMessage *model.InboxMessage) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := i.db.getQuerier(ctx)
 
 	err := q.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
@@ -62,6 +69,9 @@ func (i *InboxMessages) Insert(ctx context.Context, inboxMessage *model.InboxMes
 }
 
 func (i *InboxMessages) Update(ctx context.Context, inboxMessage *model.InboxMessage) error {
+	ctx, span := telemetry.StartSpanWithFuncName(ctx)
+	defer span.End()
+
 	q := i.db.getQuerier(ctx)
 
 	err := q.UpdateInboxMessage(ctx, sqlc.UpdateInboxMessageParams{

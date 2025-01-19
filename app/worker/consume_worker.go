@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
@@ -49,10 +50,15 @@ func (c *ConsumeWorker) Run() error {
 	c.ticker = ticker
 
 	for range ticker.C() {
+		// Start root span for each iteration.
+		ctx, span := telemetry.Tracer.Start(ctx, "ConsumeWorker.Run")
+
 		err := c.consumeMessage(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to consumeMessage", slog.String("error", err.Error()))
 		}
+
+		span.End()
 	}
 
 	return nil

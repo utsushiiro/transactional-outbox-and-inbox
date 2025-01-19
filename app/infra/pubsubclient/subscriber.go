@@ -8,6 +8,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 )
@@ -37,6 +39,9 @@ func NewSubscriber(
 
 func (s *subscriber) Receive(ctx context.Context, handler func(context.Context, *mq.Message) error) error {
 	err := s.subscription.Receive(ctx, func(ctx context.Context, pubsubMsg *pubsub.Message) {
+		// Extract otel context from message attributes.
+		ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.MapCarrier(pubsubMsg.Attributes))
+
 		msgID, err := uuid.Parse(pubsubMsg.Attributes["MessageID"])
 		if err != nil {
 			slog.WarnContext(ctx, "failed to uuid.Parse", slog.String("error", err.Error()))
