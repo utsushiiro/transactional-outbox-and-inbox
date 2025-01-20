@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -65,7 +65,7 @@ func Setup(ctx context.Context, config *TelemetryConfig) (func(context.Context) 
 	otel.SetTracerProvider(tracerProvider)
 	Tracer = tracerProvider.Tracer(config.TracerAndMeterName)
 
-	meterProvider, err := newMeterProvider(res)
+	meterProvider, err := newMeterProvider(ctx, res)
 	if err != nil {
 		return nil, handleErrInSetup(err)
 	}
@@ -102,8 +102,12 @@ func newTraceProvider(ctx context.Context, res *resource.Resource) (*trace.Trace
 	return traceProvider, nil
 }
 
-func newMeterProvider(res *resource.Resource) (*metric.MeterProvider, error) {
-	metricExporter, err := stdoutmetric.New()
+func newMeterProvider(ctx context.Context, res *resource.Resource) (*metric.MeterProvider, error) {
+	metricExporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithInsecure(),
+		otlpmetricgrpc.WithEndpoint("localhost:4317"),
+	)
 	if err != nil {
 		return nil, err
 	}
