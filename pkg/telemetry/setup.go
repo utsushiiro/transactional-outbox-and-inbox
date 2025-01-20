@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -56,7 +57,7 @@ func Setup(ctx context.Context, config *TelemetryConfig) (func(context.Context) 
 	)
 	otel.SetTextMapPropagator(propagator)
 
-	tracerProvider, err := newTraceProvider(res)
+	tracerProvider, err := newTraceProvider(ctx, res)
 	if err != nil {
 		return nil, handleErrInSetup(err)
 	}
@@ -75,8 +76,20 @@ func Setup(ctx context.Context, config *TelemetryConfig) (func(context.Context) 
 	return shutdown, nil
 }
 
-func newTraceProvider(res *resource.Resource) (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+func newTraceProvider(ctx context.Context, res *resource.Resource) (*trace.TracerProvider, error) {
+	// The following configuration is not working as expected.
+	// See: https://github.com/open-telemetry/opentelemetry-go/issues/2940
+	// traceExporter, err := otlptracegrpc.New(
+	// 	ctx,
+	// 	otlptracegrpc.WithEndpoint("localhost:5003"),
+	// 	otlptracegrpc.WithDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+	// )
+
+	traceClient := otlptracegrpc.NewClient(
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithEndpoint("localhost:4317"),
+	)
+	traceExporter, err := otlptrace.New(ctx, traceClient)
 	if err != nil {
 		return nil, err
 	}
