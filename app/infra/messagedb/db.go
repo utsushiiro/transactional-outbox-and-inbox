@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -28,6 +29,12 @@ func NewDB(
 	if err != nil {
 		return nil, err
 	}
+
+	config.MaxConns = 5
+	config.MaxConnLifetime = 5 * time.Minute
+	config.MaxConnLifetimeJitter = config.MaxConnLifetime / 2
+	// All connections live for a maximum amount of time even if they are not in use.
+	config.MaxConnIdleTime = config.MaxConnLifetime + config.MaxConnLifetimeJitter
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
