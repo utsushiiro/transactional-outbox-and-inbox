@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -73,6 +74,13 @@ func Setup(ctx context.Context, config *TelemetryConfig) (func(context.Context) 
 	otel.SetMeterProvider(meterProvider)
 	Meter = meterProvider.Meter(config.TracerAndMeterName)
 
+	// Start go runtime metric collection.
+	// See: https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/instrumentation/runtime
+	err = runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second))
+	if err != nil {
+		return nil, handleErrInSetup(err)
+	}
+
 	return shutdown, nil
 }
 
@@ -95,6 +103,8 @@ func newTraceProvider(ctx context.Context, res *resource.Resource) (*trace.Trace
 	}
 
 	traceProvider := trace.NewTracerProvider(
+		// Set to 1s for demonstrative purposes.
+		// In production, it is recommended to use a longer interval fitting monitoring needs.
 		trace.WithBatcher(traceExporter, trace.WithBatchTimeout(1*time.Second)),
 		trace.WithResource(res),
 	)
@@ -116,7 +126,11 @@ func newMeterProvider(ctx context.Context, res *resource.Resource) (*metric.Mete
 		metric.WithReader(
 			metric.NewPeriodicReader(
 				metricExporter,
-				metric.WithInterval(1*time.Second),
+				// Set to 5s for demonstrative purposes.
+				// In production, it is recommended to use a longer interval fitting monitoring needs.
+				metric.WithInterval(5*time.Second),
+				// runtime.NewProducer() collects go scheduler metrics.
+				metric.WithProducer(runtime.NewProducer()),
 			),
 		),
 		metric.WithResource(res),
