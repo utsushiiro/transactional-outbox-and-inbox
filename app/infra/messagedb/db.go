@@ -8,8 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/infra/messagedb/sqlc"
+	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 )
 
 type DB struct {
@@ -43,6 +45,63 @@ func NewDB(
 
 	db := &DB{
 		pool: pool,
+	}
+
+	totalConns, err := telemetry.Meter.Int64ObservableGauge(
+		"pgxpool_total_connections",
+		metric.WithDescription("The total number of connections in the pgx connection pool, including both idle and active connections."),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	idleConns, err := telemetry.Meter.Int64ObservableGauge(
+		"pgxpool_idle_connections",
+		metric.WithDescription("The number of idle connections in the pgx connection pool that are available for use."),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	activeConns, err := telemetry.Meter.Int64ObservableGauge(
+		"pgxpool_active_connections",
+		metric.WithDescription("The number of active connections currently being used from the pgx connection pool."),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	waitCount, err := telemetry.Meter.Int64ObservableGauge(
+		"pgxpool_wait_count",
+		metric.WithDescription("The total number of times a connection has been requested from the pgx connection pool."),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	waitDuration, err := telemetry.Meter.Float64ObservableGauge(
+		"pgxpool_wait_duration_seconds",
+		metric.WithDescription("The total duration in seconds spent waiting for a connection from the pgx connection pool."),
+	)
+	if err != nil {
+		return nil, err
+	}
+	_, err = telemetry.Meter.RegisterCallback(
+		func(_ context.Context, observer metric.Observer) error {
+			poolStats := pool.Stat()
+
+			observer.ObserveInt64(totalConns, int64(poolStats.TotalConns()))
+			observer.ObserveInt64(idleConns, int64(poolStats.IdleConns()))
+			observer.ObserveInt64(activeConns, int64(poolStats.AcquiredConns()))
+			observer.ObserveInt64(waitCount, poolStats.AcquireCount())
+			observer.ObserveFloat64(waitDuration, poolStats.AcquireDuration().Seconds())
+
+			return nil
+		},
+		totalConns, idleConns, activeConns, waitCount, waitDuration,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return db, nil
