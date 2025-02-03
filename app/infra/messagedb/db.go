@@ -165,7 +165,7 @@ func (d *DB) RunInTx(
 
 func (d *DB) getQuerier(ctx context.Context) sqlc.Querier {
 	if v, ok := ctx.Value(ctxKeyForPgxTx{}).(pgx.Tx); ok {
-		return sqlc.NewQuerier(v)
+		return sqlc.New(v)
 	}
 
 	return sqlc.New(d.pool)
