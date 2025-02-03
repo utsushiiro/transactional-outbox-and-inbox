@@ -19,18 +19,18 @@ LIMIT $1
 FOR UPDATE SKIP LOCKED;
 
 -- name: InsertOutboxMessage :exec
-INSERT INTO outbox_messages (message_uuid, message_payload, sent_at)
+INSERT INTO outbox_messages (id, payload, sent_at)
 VALUES ($1, $2, $3);
 
 -- name: UpdateOutboxMessage :exec
 UPDATE outbox_messages
-SET message_payload = $2, sent_at = $3
-WHERE message_uuid = $1;
+SET payload = $2, sent_at = $3
+WHERE id = $1;
 
 -- name: BulkUpdateOutboxMessagesAsSent :exec
 UPDATE outbox_messages
 SET sent_at = $1
-WHERE message_uuid = ANY(@message_uuids::uuid[]);
+WHERE id = ANY(@ids::uuid[]);
 
 /**
  * inbox_messages table
@@ -45,10 +45,10 @@ LIMIT 1
 FOR UPDATE SKIP LOCKED;
 
 -- name: InsertInboxMessage :exec
-INSERT INTO inbox_messages (message_uuid, message_payload, received_at, processed_at)
+INSERT INTO inbox_messages (id, payload, received_at, processed_at)
 VALUES ($1, $2, $3, $4);
 
 -- name: UpdateInboxMessage :exec
 UPDATE inbox_messages
-SET message_payload = $2, received_at = $3, processed_at = $4
-WHERE message_uuid = $1;
+SET payload = $2, received_at = $3, processed_at = $4
+WHERE id = $1;

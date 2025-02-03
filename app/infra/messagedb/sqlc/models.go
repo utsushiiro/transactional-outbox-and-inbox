@@ -11,18 +11,18 @@ import (
 )
 
 type InboxMessage struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	ReceivedAt     time.Time
-	ProcessedAt    *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID          uuid.UUID
+	Payload     []byte
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type OutboxMessage struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	SentAt         *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID        uuid.UUID
+	Payload   []byte
+	SentAt    *time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

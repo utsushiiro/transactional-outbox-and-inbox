@@ -15,35 +15,35 @@ import (
 const bulkUpdateOutboxMessagesAsSent = `-- name: BulkUpdateOutboxMessagesAsSent :exec
 UPDATE outbox_messages
 SET sent_at = $1
-WHERE message_uuid = ANY($2::uuid[])
+WHERE id = ANY($2::uuid[])
 `
 
 type BulkUpdateOutboxMessagesAsSentParams struct {
-	SentAt       *time.Time
-	MessageUuids []uuid.UUID
+	SentAt *time.Time
+	Ids    []uuid.UUID
 }
 
 func (q *Queries) BulkUpdateOutboxMessagesAsSent(ctx context.Context, arg BulkUpdateOutboxMessagesAsSentParams) error {
-	_, err := q.db.Exec(ctx, bulkUpdateOutboxMessagesAsSent, arg.SentAt, arg.MessageUuids)
+	_, err := q.db.Exec(ctx, bulkUpdateOutboxMessagesAsSent, arg.SentAt, arg.Ids)
 	return err
 }
 
 const insertInboxMessage = `-- name: InsertInboxMessage :exec
-INSERT INTO inbox_messages (message_uuid, message_payload, received_at, processed_at)
+INSERT INTO inbox_messages (id, payload, received_at, processed_at)
 VALUES ($1, $2, $3, $4)
 `
 
 type InsertInboxMessageParams struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	ReceivedAt     time.Time
-	ProcessedAt    *time.Time
+	ID          uuid.UUID
+	Payload     []byte
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
 }
 
 func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessageParams) error {
 	_, err := q.db.Exec(ctx, insertInboxMessage,
-		arg.MessageUuid,
-		arg.MessagePayload,
+		arg.ID,
+		arg.Payload,
 		arg.ReceivedAt,
 		arg.ProcessedAt,
 	)
@@ -51,18 +51,18 @@ func (q *Queries) InsertInboxMessage(ctx context.Context, arg InsertInboxMessage
 }
 
 const insertOutboxMessage = `-- name: InsertOutboxMessage :exec
-INSERT INTO outbox_messages (message_uuid, message_payload, sent_at)
+INSERT INTO outbox_messages (id, payload, sent_at)
 VALUES ($1, $2, $3)
 `
 
 type InsertOutboxMessageParams struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	SentAt         *time.Time
+	ID      uuid.UUID
+	Payload []byte
+	SentAt  *time.Time
 }
 
 func (q *Queries) InsertOutboxMessage(ctx context.Context, arg InsertOutboxMessageParams) error {
-	_, err := q.db.Exec(ctx, insertOutboxMessage, arg.MessageUuid, arg.MessagePayload, arg.SentAt)
+	_, err := q.db.Exec(ctx, insertOutboxMessage, arg.ID, arg.Payload, arg.SentAt)
 	return err
 }
 
@@ -71,7 +71,7 @@ const selectUnprocessedInboxMessage = `-- name: SelectUnprocessedInboxMessage :o
  * inbox_messages table
  */
 
-SELECT message_uuid, message_payload, received_at, processed_at, created_at, updated_at
+SELECT id, payload, received_at, processed_at, created_at, updated_at
 FROM inbox_messages
 WHERE processed_at IS NULL
 ORDER BY received_at ASC
@@ -83,8 +83,8 @@ func (q *Queries) SelectUnprocessedInboxMessage(ctx context.Context) (InboxMessa
 	row := q.db.QueryRow(ctx, selectUnprocessedInboxMessage)
 	var i InboxMessage
 	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
+		&i.ID,
+		&i.Payload,
 		&i.ReceivedAt,
 		&i.ProcessedAt,
 		&i.CreatedAt,
@@ -98,7 +98,7 @@ const selectUnsentOutboxMessage = `-- name: SelectUnsentOutboxMessage :one
  * outbox_messages table
  */
 
-SELECT message_uuid, message_payload, sent_at, created_at, updated_at
+SELECT id, payload, sent_at, created_at, updated_at
 FROM outbox_messages
 WHERE sent_at IS NULL
 ORDER BY created_at ASC
@@ -110,8 +110,8 @@ func (q *Queries) SelectUnsentOutboxMessage(ctx context.Context) (OutboxMessage,
 	row := q.db.QueryRow(ctx, selectUnsentOutboxMessage)
 	var i OutboxMessage
 	err := row.Scan(
-		&i.MessageUuid,
-		&i.MessagePayload,
+		&i.ID,
+		&i.Payload,
 		&i.SentAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -120,7 +120,7 @@ func (q *Queries) SelectUnsentOutboxMessage(ctx context.Context) (OutboxMessage,
 }
 
 const selectUnsentOutboxMessages = `-- name: SelectUnsentOutboxMessages :many
-SELECT message_uuid, message_payload, sent_at, created_at, updated_at
+SELECT id, payload, sent_at, created_at, updated_at
 FROM outbox_messages
 WHERE sent_at IS NULL
 ORDER BY created_at ASC
@@ -138,8 +138,8 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 	for rows.Next() {
 		var i OutboxMessage
 		if err := rows.Scan(
-			&i.MessageUuid,
-			&i.MessagePayload,
+			&i.ID,
+			&i.Payload,
 			&i.SentAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -156,21 +156,21 @@ func (q *Queries) SelectUnsentOutboxMessages(ctx context.Context, limit int32) (
 
 const updateInboxMessage = `-- name: UpdateInboxMessage :exec
 UPDATE inbox_messages
-SET message_payload = $2, received_at = $3, processed_at = $4
-WHERE message_uuid = $1
+SET payload = $2, received_at = $3, processed_at = $4
+WHERE id = $1
 `
 
 type UpdateInboxMessageParams struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	ReceivedAt     time.Time
-	ProcessedAt    *time.Time
+	ID          uuid.UUID
+	Payload     []byte
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
 }
 
 func (q *Queries) UpdateInboxMessage(ctx context.Context, arg UpdateInboxMessageParams) error {
 	_, err := q.db.Exec(ctx, updateInboxMessage,
-		arg.MessageUuid,
-		arg.MessagePayload,
+		arg.ID,
+		arg.Payload,
 		arg.ReceivedAt,
 		arg.ProcessedAt,
 	)
@@ -179,17 +179,17 @@ func (q *Queries) UpdateInboxMessage(ctx context.Context, arg UpdateInboxMessage
 
 const updateOutboxMessage = `-- name: UpdateOutboxMessage :exec
 UPDATE outbox_messages
-SET message_payload = $2, sent_at = $3
-WHERE message_uuid = $1
+SET payload = $2, sent_at = $3
+WHERE id = $1
 `
 
 type UpdateOutboxMessageParams struct {
-	MessageUuid    uuid.UUID
-	MessagePayload []byte
-	SentAt         *time.Time
+	ID      uuid.UUID
+	Payload []byte
+	SentAt  *time.Time
 }
 
 func (q *Queries) UpdateOutboxMessage(ctx context.Context, arg UpdateOutboxMessageParams) error {
-	_, err := q.db.Exec(ctx, updateOutboxMessage, arg.MessageUuid, arg.MessagePayload, arg.SentAt)
+	_, err := q.db.Exec(ctx, updateOutboxMessage, arg.ID, arg.Payload, arg.SentAt)
 	return err
 }

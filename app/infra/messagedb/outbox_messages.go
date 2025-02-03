@@ -46,8 +46,8 @@ func (o *OutboxMessages) SelectUnsentOneWithLock(ctx context.Context) (*model.Ou
 	}
 
 	return &model.OutboxMessage{
-		ID:      raw.MessageUuid,
-		Payload: raw.MessagePayload,
+		ID:      raw.ID,
+		Payload: raw.Payload,
 		SentAt:  raw.SentAt,
 	}, nil
 }
@@ -71,8 +71,8 @@ func (o *OutboxMessages) SelectUnsentManyWithLock(ctx context.Context, size int)
 	outboxMessages := make(model.OutboxMessages, len(raws))
 	for i, raw := range raws {
 		outboxMessages[i] = &model.OutboxMessage{
-			ID:      raw.MessageUuid,
-			Payload: raw.MessagePayload,
+			ID:      raw.ID,
+			Payload: raw.Payload,
 			SentAt:  raw.SentAt,
 		}
 	}
@@ -87,9 +87,9 @@ func (o *OutboxMessages) Insert(ctx context.Context, outboxMessage *model.Outbox
 	q := o.db.getQuerier(ctx)
 
 	err := q.InsertOutboxMessage(ctx, sqlc.InsertOutboxMessageParams{
-		MessageUuid:    outboxMessage.ID,
-		MessagePayload: outboxMessage.Payload,
-		SentAt:         outboxMessage.SentAt,
+		ID:      outboxMessage.ID,
+		Payload: outboxMessage.Payload,
+		SentAt:  outboxMessage.SentAt,
 	})
 	if err != nil {
 		return err
@@ -105,9 +105,9 @@ func (o *OutboxMessages) Update(ctx context.Context, outboxMessage *model.Outbox
 	q := o.db.getQuerier(ctx)
 
 	err := q.UpdateOutboxMessage(ctx, sqlc.UpdateOutboxMessageParams{
-		MessageUuid:    outboxMessage.ID,
-		MessagePayload: outboxMessage.Payload,
-		SentAt:         outboxMessage.SentAt,
+		ID:      outboxMessage.ID,
+		Payload: outboxMessage.Payload,
+		SentAt:  outboxMessage.SentAt,
 	})
 	if err != nil {
 		return err
@@ -123,8 +123,8 @@ func (o *OutboxMessages) BulkUpdateAsSent(ctx context.Context, outboxMessageIDs 
 	q := o.db.getQuerier(ctx)
 
 	err := q.BulkUpdateOutboxMessagesAsSent(ctx, sqlc.BulkUpdateOutboxMessagesAsSentParams{
-		MessageUuids: outboxMessageIDs,
-		SentAt:       &sentAt,
+		Ids:    outboxMessageIDs,
+		SentAt: &sentAt,
 	})
 	if err != nil {
 		return err

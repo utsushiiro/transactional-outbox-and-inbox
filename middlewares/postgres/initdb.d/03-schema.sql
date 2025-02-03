@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS outbox_messages (
-    message_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    message_payload JSONB NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    payload JSONB NOT NULL,
     sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
@@ -15,8 +15,8 @@ CREATE TRIGGER auto_set_outbox_messages_created_at_and_updated_at
     EXECUTE FUNCTION auto_set_created_at_and_updated_at();
 
 CREATE TABLE IF NOT EXISTS inbox_messages (
-    message_uuid UUID PRIMARY KEY,
-    message_payload JSONB NOT NULL,
+    id UUID PRIMARY KEY,
+    payload JSONB NOT NULL,
     received_at TIMESTAMPTZ NOT NULL,
     processed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,

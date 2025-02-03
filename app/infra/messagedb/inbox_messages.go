@@ -42,8 +42,8 @@ func (i *InboxMessages) SelectUnprocessedOneWithLock(ctx context.Context) (*mode
 	}
 
 	return &model.InboxMessage{
-		ID:          raw.MessageUuid,
-		Payload:     raw.MessagePayload,
+		ID:          raw.ID,
+		Payload:     raw.Payload,
 		ReceivedAt:  raw.ReceivedAt,
 		ProcessedAt: raw.ProcessedAt,
 	}, nil
@@ -56,10 +56,10 @@ func (i *InboxMessages) Insert(ctx context.Context, inboxMessage *model.InboxMes
 	q := i.db.getQuerier(ctx)
 
 	err := q.InsertInboxMessage(ctx, sqlc.InsertInboxMessageParams{
-		MessageUuid:    inboxMessage.ID,
-		MessagePayload: inboxMessage.Payload,
-		ReceivedAt:     inboxMessage.ReceivedAt,
-		ProcessedAt:    inboxMessage.ProcessedAt,
+		ID:          inboxMessage.ID,
+		Payload:     inboxMessage.Payload,
+		ReceivedAt:  inboxMessage.ReceivedAt,
+		ProcessedAt: inboxMessage.ProcessedAt,
 	})
 	if err != nil {
 		return err
@@ -75,10 +75,10 @@ func (i *InboxMessages) Update(ctx context.Context, inboxMessage *model.InboxMes
 	q := i.db.getQuerier(ctx)
 
 	err := q.UpdateInboxMessage(ctx, sqlc.UpdateInboxMessageParams{
-		MessageUuid:    inboxMessage.ID,
-		MessagePayload: inboxMessage.Payload,
-		ReceivedAt:     inboxMessage.ReceivedAt,
-		ProcessedAt:    inboxMessage.ProcessedAt,
+		ID:          inboxMessage.ID,
+		Payload:     inboxMessage.Payload,
+		ReceivedAt:  inboxMessage.ReceivedAt,
+		ProcessedAt: inboxMessage.ProcessedAt,
 	})
 	if err != nil {
 		return err
