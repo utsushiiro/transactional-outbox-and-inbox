@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/newmo-oss/ctxtime"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
@@ -94,7 +96,7 @@ func (p *BatchOutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) e
 		publishedOutboxMessages := unsentOutboxMessages.Filter(result.FailedIDs)
 		publishedCount = len(publishedOutboxMessages)
 
-		sentAt := timeutils.NowUTC()
+		sentAt := ctxtime.Now(ctx)
 		err = p.db.outboxMessages.BulkUpdateAsSent(ctx, publishedOutboxMessages.IDs(), sentAt)
 		if err != nil {
 			return err

@@ -1,12 +1,13 @@
 module github.com/utsushiiro/transactional-outbox-and-inbox
 
-go 1.23.3
+go 1.23.5
 
 require (
 	cloud.google.com/go/pubsub v1.45.3
 	github.com/gammazero/workerpool v1.1.3
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.2
+	github.com/newmo-oss/ctxtime v0.2.0
 	github.com/spf13/cobra v1.8.1
 	go.opentelemetry.io/otel v1.34.0
 	go.opentelemetry.io/otel/metric v1.34.0

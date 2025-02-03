@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/newmo-oss/ctxtime"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
@@ -42,7 +44,7 @@ func (i *InboxWorker) Run() error {
 		defer cancel()
 
 		err := i.db.RunInTx(ctx, func(ctx context.Context) error {
-			inboxMessage := model.NewInboxMessage(msg.ID, msg.Payload)
+			inboxMessage := model.NewInboxMessage(msg.ID, msg.Payload, ctxtime.Now(ctx))
 
 			err := i.db.inboxMessages.Insert(ctx, inboxMessage)
 			if err != nil {

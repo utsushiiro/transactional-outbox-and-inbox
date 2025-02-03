@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type OutboxMessage struct {
@@ -22,9 +20,8 @@ func NewOutboxMessage(payload []byte) *OutboxMessage {
 	}
 }
 
-func (m *OutboxMessage) MarkAsSent() {
-	now := timeutils.NowUTC()
-	m.SentAt = &now
+func (m *OutboxMessage) MarkAsSent(sentAt time.Time) {
+	m.SentAt = &sentAt
 }
 
 type OutboxMessages []*OutboxMessage

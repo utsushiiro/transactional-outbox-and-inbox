@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
 )
 
 type InboxMessage struct {
@@ -15,18 +13,17 @@ type InboxMessage struct {
 	ProcessedAt *time.Time
 }
 
-func NewInboxMessage(id uuid.UUID, payload []byte) *InboxMessage {
+func NewInboxMessage(id uuid.UUID, payload []byte, receivedAt time.Time) *InboxMessage {
 	return &InboxMessage{
 		ID:          id,
 		Payload:     payload,
-		ReceivedAt:  timeutils.NowUTC(),
+		ReceivedAt:  receivedAt,
 		ProcessedAt: nil,
 	}
 }
 
-func (i *InboxMessage) MarkAsProcessed() {
-	now := timeutils.NowUTC()
-	i.ProcessedAt = &now
+func (i *InboxMessage) MarkAsProcessed(proceededAt time.Time) {
+	i.ProcessedAt = &proceededAt
 }
 
 type InboxMessages []*InboxMessage

@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/newmo-oss/ctxtime"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/domain/model"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
@@ -70,7 +72,7 @@ func (p *ProduceWorker) produceMessage(ctx context.Context) error {
 		// Perform some tasks here in the same transaction with inserting outbox message.
 
 		// In a real-world scenario, this data would be related to the task.
-		data, err := json.Marshal("Hello, World! at " + timeutils.NowUTC().In(time.Local).Format(time.RFC3339))
+		data, err := json.Marshal("Hello, World! at " + ctxtime.Now(ctx).In(time.Local).Format(time.RFC3339))
 		if err != nil {
 			return err
 		}

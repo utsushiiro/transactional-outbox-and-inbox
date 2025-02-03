@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/newmo-oss/ctxtime"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/timeutils"
@@ -90,7 +92,7 @@ func (c *ConsumeWorker) consumeMessage(ctx context.Context) error {
 		slog.InfoContext(ctx, fmt.Sprintf("processed message: %v", msg))
 
 		// After processing, mark the message as processed.
-		unprocessedMessage.MarkAsProcessed()
+		unprocessedMessage.MarkAsProcessed(ctxtime.Now(ctx))
 
 		err = c.db.inboxMessages.Update(ctx, unprocessedMessage)
 		if err != nil {

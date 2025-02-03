@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/newmo-oss/ctxtime"
+
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/messagedb"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/app/worker/mq"
 	"github.com/utsushiiro/transactional-outbox-and-inbox/pkg/telemetry"
@@ -89,7 +91,7 @@ func (p *OutboxWorker) publishUnsentMessagesInOutbox(ctx context.Context) error 
 		}
 
 		// After publishing the message, mark it as sent.
-		unsentMsg.MarkAsSent()
+		unsentMsg.MarkAsSent(ctxtime.Now(ctx))
 
 		err = p.db.OutboxMessages.Update(ctx, unsentMsg)
 		if err != nil {
